@@ -120,6 +120,18 @@ export async function createPairingCodeAction(formData: FormData) {
   redirect(`/?pairing=${encodeURIComponent(code)}`);
 }
 
+export async function revokeDeviceAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "owner") redirect("/?error=permission");
+  await getStore().revokeDevice({
+    householdId: user.householdId,
+    userId: user.id,
+    deviceId: text(formData, "deviceId"),
+  });
+  revalidatePath("/");
+  redirect("/?saved=device_revoked#frame");
+}
+
 export async function updateSettingsAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "owner") redirect("/?error=permission");

@@ -33,6 +33,18 @@ export default {
     const url = new URL(request.url);
     const store = new MemoryScreenStore(env.DB);
 
+    if (url.pathname === "/api/health" && request.method === "GET") {
+      try {
+        await env.DB.prepare("SELECT 1").first();
+        return json({ ok: true, service: "frame" });
+      } catch {
+        return json(
+          { ok: false, service: "frame", error: "dependency_unavailable" },
+          { status: 503 },
+        );
+      }
+    }
+
     if (url.pathname === "/api/pair" && request.method === "POST") {
       const body = (await request.json()) as { code?: string };
       const code = body.code;

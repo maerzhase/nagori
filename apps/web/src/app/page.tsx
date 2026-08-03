@@ -6,6 +6,7 @@ import {
   createInvitationAction,
   loginAction,
   logoutAction,
+  revokeDeviceAction,
   setupAction,
   updateSettingsAction,
 } from "./actions";
@@ -593,6 +594,14 @@ export default async function Home({
                         : "Paired · waiting for first check-in"
                       : "Waiting to be paired"}
                   </span>
+                  {user.role === "owner" && (
+                    <form action={revokeDeviceAction}>
+                      <input type="hidden" name="deviceId" value={device.id} />
+                      <button className="text-button" type="submit">
+                        Revoke
+                      </button>
+                    </form>
+                  )}
                 </div>
               ))}
             </section>

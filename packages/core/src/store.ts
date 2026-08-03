@@ -483,6 +483,36 @@ export class MemoryScreenStore {
     return result.results ?? [];
   }
 
+  async revokeDevice(input: {
+    householdId: string;
+    userId: string;
+    deviceId: string;
+  }): Promise<boolean> {
+    const device = await this.db
+      .prepare(
+        "SELECT id FROM devices WHERE id = ? AND household_id = ? AND revoked_at IS NULL",
+      )
+      .bind(input.deviceId, input.householdId)
+      .first<{ id: string }>();
+    if (!device) return false;
+    const now = new Date();
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE devices SET revoked_at = ?, token_hash = NULL WHERE id = ? AND household_id = ?",
+        )
+        .bind(now.toISOString(), input.deviceId, input.householdId),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "device.revoked",
+        input.deviceId,
+        now,
+      ),
+    ]);
+    return true;
+  }
+
   async claimPairingCode(
     code: string,
   ): Promise<{ token: string; deviceId: string } | null> {
@@ -516,9 +546,13 @@ export class MemoryScreenStore {
   }
 
   async touchDevice(deviceId: string): Promise<void> {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 15 * 60_000).toISOString();
     await this.db
-      .prepare("UPDATE devices SET last_seen_at = ? WHERE id = ?")
-      .bind(new Date().toISOString(), deviceId)
+      .prepare(
+        "UPDATE devices SET last_seen_at = ? WHERE id = ? AND (last_seen_at IS NULL OR last_seen_at < ?)",
+      )
+      .bind(now.toISOString(), deviceId, cutoff)
       .run();
   }
 
