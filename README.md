@@ -52,8 +52,10 @@ pnpm exec wrangler r2 bucket create nagori-photos
 
 Then configure the GitHub repository:
 
-- Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
-- Production environment variables: `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL). These must match the `routes` in the worker configs.
+All five values are `production` environment secrets:
+
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
+- `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL). These must match the `routes` in the worker configs.
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit permissions for the account. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
