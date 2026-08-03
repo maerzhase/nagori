@@ -1,34 +1,64 @@
-# Monorepo Template
+# Memory Screen
 
-Opinionated `pnpm` + Turbo starter with one publishable UI package and one private Next.js app that consumes it through workspace dependencies.
+A private, self-updating family photo frame for an old iPad. Family members sign in from their phones to share photos or short notes; the paired iPad loops the active memories without requiring anyone at the frame to do anything.
 
-## Workspace Layout
+The dashboard is a Next.js app adapted for Cloudflare Workers. The frame is a separate, deliberately tiny Worker: it has no React or Next.js client runtime, builds to a Safari 12-compatible IIFE, and uses an independent read-only device session.
 
-- `packages/ui` - publishable Base UI + Tailwind package
-- `apps/web` - private example app consuming `@acme/ui`
+## What is included
 
-## Getting Started
+- Owner, editor, and viewer roles, with invitation links for additional family members.
+- Private server-side session cookies; password hashes use Web Crypto PBKDF2.
+- Private R2 photo storage and authenticated media delivery.
+- A default 30-day display window, future scheduling, forever option, expiry grouping, and a 200-active-slide guardrail.
+- Six-digit, 15-minute iPad pairing codes and independently revocable device credentials.
+- A local D1/R2 development environment shared by the dashboard and the frame.
+- A GitHub Actions workflow that migrates D1 then deploys the frame and dashboard.
+
+## Run locally
+
+Use Node 20+ and pnpm 10.
 
 ```bash
 pnpm install
-pnpm build
+pnpm db:migrate:local
 pnpm dev
 ```
 
-## Useful Commands
+Open the dashboard at the Next.js address printed by the command (normally `http://localhost:3000`) and complete first-run setup. Open `http://localhost:8788` on the device/browser intended to act as the frame, create a pairing code in the dashboard, and enter it there.
+
+The local database and object storage live in `.wrangler/state/` and are intentionally ignored by Git. To reset local data, stop the development servers and remove that specific directory.
+
+## Test and build
 
 ```bash
-pnpm dev
-pnpm build
+pnpm test
 pnpm check
-pnpm fix
-pnpm changeset
-pnpm release
+pnpm build
+pnpm --filter @acme/web build:cloudflare
 ```
 
-## Release Flow
+`pnpm test` runs the focused schedule lifecycle tests. The Cloudflare build command validates the worker bundle used by production.
 
-1. Run `pnpm changeset` after changing a publishable package.
-2. Commit the generated changeset with your code.
-3. When the branch lands on `main`, the Changesets GitHub Action opens or updates a release PR.
-4. Merging that PR publishes releaseable packages to npm.
+## Production deployment
+
+Create these Cloudflare resources once:
+
+```bash
+pnpm exec wrangler d1 create memory-screen
+pnpm exec wrangler r2 bucket create memory-screen-photos
+```
+
+Then configure the GitHub repository:
+
+- Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
+- Production environment variables: `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL).
+
+The token needs Workers Scripts edit, D1 edit, and R2 edit permissions for the account. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
+
+Before the first deploy, replace the temporary worker routes with your own routes/custom domains in Cloudflare. The checked-in configs use a placeholder D1 ID by design; the workflow injects the production ID without committing it.
+
+## Compatibility
+
+The frame is designed around the original iPad Air’s iOS 12.5.7 baseline: plain DOM APIs, an ES2017/Safari 12 bundle, system fonts, and no optional viewer framework. Its generated CSS uses shared Tailwind design tokens but all critical viewer rules remain ordinary CSS outside Tailwind cascade layers, which older Safari ignores.
+
+The implementation roadmap and operating notes are in [plans/README.md](plans/README.md).
