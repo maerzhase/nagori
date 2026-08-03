@@ -48,6 +48,20 @@ export function clampDisplaySeconds(value: number): number {
   return Math.min(60, Math.max(5, Math.round(value)));
 }
 
+/**
+ * "Forever" travels through the stack as a falsy value: the upload form sends an
+ * empty `x-display-until` header for it, and `isValidScheduleWindow` accepts
+ * that. The active-slide queries match on `display_until IS NULL`, though, so an
+ * empty string stored verbatim hides the slide from every one of them. Collapse
+ * it before it reaches the database.
+ */
+export function normalizeDisplayUntil(
+  displayUntil: string | null | undefined,
+): string | null {
+  const trimmed = displayUntil?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export function isValidScheduleWindow(
   displayFrom: string,
   displayUntil: string | null,

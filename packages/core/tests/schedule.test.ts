@@ -3,6 +3,7 @@ import {
   defaultSchedule,
   isValidScheduleWindow,
   isVisible,
+  normalizeDisplayUntil,
   scheduleStatus,
 } from "../src/schedule";
 
@@ -70,6 +71,34 @@ describe("slide scheduling", () => {
         now,
       ),
     ).toBe(true);
+  });
+
+  it("stores a forever slide as null rather than an empty string", () => {
+    // The upload form sends an empty x-display-until header for "forever". Left
+    // as "", the slide matches neither branch of `display_until IS NULL OR
+    // display_until > ?`, so it counts as zero active and never reaches the frame.
+    expect(normalizeDisplayUntil("")).toBeNull();
+    expect(normalizeDisplayUntil("   ")).toBeNull();
+    expect(normalizeDisplayUntil(undefined)).toBeNull();
+    expect(normalizeDisplayUntil(null)).toBeNull();
+    expect(normalizeDisplayUntil("2026-09-02T12:00:00.000Z")).toBe(
+      "2026-09-02T12:00:00.000Z",
+    );
+  });
+
+  it("treats a forever slide as active regardless of empty or null", () => {
+    for (const until of ["", null]) {
+      expect(
+        isVisible(
+          {
+            state: "published",
+            displayFrom: "2026-08-01T00:00:00Z",
+            displayUntil: normalizeDisplayUntil(until),
+          },
+          now,
+        ),
+      ).toBe(true);
+    }
   });
 
   it("rejects a schedule that ends before or at its start", () => {

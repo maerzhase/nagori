@@ -2,6 +2,7 @@ import {
   ACTIVE_SLIDE_LIMIT,
   defaultSchedule,
   isValidScheduleWindow,
+  normalizeDisplayUntil,
 } from "./schedule";
 import { randomId, sha256 } from "./security";
 import type {
@@ -409,10 +410,11 @@ export class NagoriStore {
     const now = new Date();
     const schedule = defaultSchedule(now, input.defaultVisibilityDays);
     const displayFrom = input.displayFrom ?? schedule.displayFrom;
-    const displayUntil =
+    const displayUntil = normalizeDisplayUntil(
       input.displayUntil === undefined
         ? schedule.displayUntil
-        : input.displayUntil;
+        : input.displayUntil,
+    );
     if (!isValidScheduleWindow(displayFrom, displayUntil)) {
       throw new Error("INVALID_SCHEDULE");
     }
@@ -476,10 +478,11 @@ export class NagoriStore {
     const now = new Date();
     const schedule = defaultSchedule(now, input.defaultVisibilityDays);
     const displayFrom = input.displayFrom ?? schedule.displayFrom;
-    const displayUntil =
+    const displayUntil = normalizeDisplayUntil(
       input.displayUntil === undefined
         ? schedule.displayUntil
-        : input.displayUntil;
+        : input.displayUntil,
+    );
     if (!isValidScheduleWindow(displayFrom, displayUntil)) {
       throw new Error("INVALID_SCHEDULE");
     }
@@ -549,7 +552,8 @@ export class NagoriStore {
     displayFrom: string;
     displayUntil: string | null;
   }): Promise<boolean> {
-    if (!isValidScheduleWindow(input.displayFrom, input.displayUntil)) {
+    const displayUntil = normalizeDisplayUntil(input.displayUntil);
+    if (!isValidScheduleWindow(input.displayFrom, displayUntil)) {
       throw new Error("INVALID_SCHEDULE");
     }
     const existing = await this.db
@@ -567,7 +571,7 @@ export class NagoriStore {
         )
         .bind(
           input.displayFrom,
-          input.displayUntil,
+          displayUntil,
           now.toISOString(),
           input.slideId,
           input.householdId,
