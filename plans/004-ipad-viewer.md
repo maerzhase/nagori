@@ -35,9 +35,9 @@ must remain independent of Next.js and React.
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Checks/tests | `pnpm check && pnpm test` | exit 0 |
-| Viewer E2E | `pnpm --filter @memory-screen/frame test:e2e` | all pass |
-| Frame Worker build | `pnpm --filter @memory-screen/frame build` | exit 0 |
-| Compatibility | `pnpm --filter @memory-screen/frame test:compat` | legacy syntax/API/CSS and budgets pass |
+| Viewer E2E | `pnpm --filter @nagori/frame test:e2e` | all pass |
+| Frame Worker build | `pnpm --filter @nagori/frame build` | exit 0 |
+| Compatibility | `pnpm --filter @nagori/frame test:compat` | legacy syntax/API/CSS and budgets pass |
 
 ## Scope
 

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "memory-screen-frame",
+  "name": "nagori-frame",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-20",
   "assets": {
@@ -11,7 +11,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "memory-screen",
+      "database_name": "nagori",
       "database_id": "replace-with-d1-id",
       "migrations_dir": "../../packages/core/migrations"
     }
@@ -19,7 +19,7 @@
   "r2_buckets": [
     {
       "binding": "PHOTOS",
-      "bucket_name": "memory-screen-photos"
+      "bucket_name": "nagori-photos"
     }
   ]
 }

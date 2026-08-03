@@ -53,9 +53,9 @@ services, D1/R2/Images bindings, tests, and preview-deploy checks.
 | Unit/integration | `pnpm test` | exit 0, all tests pass |
 | Next build | `pnpm build` | exit 0 |
 | Dashboard Worker build | `pnpm --filter @acme/web cf:build` | exit 0; `.open-next/worker.js` exists |
-| Frame legacy build | `pnpm --filter @memory-screen/frame build` | exit 0; one legacy IIFE and static assets exist |
-| Frame compatibility check | `pnpm --filter @memory-screen/frame test:compat` | exit 0; syntax/API/CSS budget checks pass |
-| D1 local migration | `pnpm --filter @memory-screen/core db:migrate:local` | exit 0 against local D1 |
+| Frame legacy build | `pnpm --filter @nagori/frame build` | exit 0; one legacy IIFE and static assets exist |
+| Frame compatibility check | `pnpm --filter @nagori/frame test:compat` | legacy syntax/API/CSS and budgets pass |
+| D1 local migration | `pnpm --filter @nagori/core db:migrate:local` | exit 0 against local D1 |
 
 ## Scope
 

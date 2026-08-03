@@ -1,4 +1,4 @@
-import { ACTIVE_SLIDE_LIMIT, randomId } from "@memory-screen/core";
+import { ACTIVE_SLIDE_LIMIT, randomId } from "@nagori/core";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";

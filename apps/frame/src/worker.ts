@@ -1,8 +1,8 @@
 import {
-  MemoryScreenStore,
+  NagoriStore,
   type Database,
   type ObjectBucket,
-} from "@memory-screen/core";
+} from "@nagori/core";
 
 interface Env {
   DB: Database;
@@ -36,7 +36,7 @@ function secure(response: Response): Response {
   return new Response(response.body, { status: response.status, headers });
 }
 
-async function authenticatedDevice(request: Request, store: MemoryScreenStore) {
+async function authenticatedDevice(request: Request, store: NagoriStore) {
   const token = cookieValue(request, "frame_session");
   return token ? store.findDevice(token) : null;
 }
@@ -44,7 +44,7 @@ async function authenticatedDevice(request: Request, store: MemoryScreenStore) {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const store = new MemoryScreenStore(env.DB);
+    const store = new NagoriStore(env.DB);
 
     if (url.pathname === "/api/health" && request.method === "GET") {
       try {

@@ -1,9 +1,9 @@
 {
-  "name": "@memory-screen/frame",
+  "name": "@nagori/frame",
   "version": "0.0.0",
   "dependencies": {
-    "@memory-screen/core": "workspace:*",
-    "@memory-screen/ui": "workspace:*"
+    "@nagori/core": "workspace:*",
+    "@nagori/ui": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",

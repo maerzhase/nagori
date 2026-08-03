@@ -1,4 +1,4 @@
-import type { SessionUser } from "@memory-screen/core";
+import type { SessionUser } from "@nagori/core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getStore } from "./cloudflare";

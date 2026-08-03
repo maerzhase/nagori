@@ -1,4 +1,4 @@
-name: Deploy Memory Screen
+name: Deploy Nagori
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-memory-screen-${{ github.ref }}
+  group: deploy-nagori-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -42,7 +42,7 @@ jobs:
         run: pnpm check && pnpm test
 
       - name: Build deployment artifacts
-        run: pnpm --filter @memory-screen/frame build && pnpm --filter @acme/web build:cloudflare
+        run: pnpm --filter @nagori/frame build && pnpm --filter @acme/web build:cloudflare
 
       - name: Create production worker configuration
         run: |
@@ -53,7 +53,7 @@ jobs:
           sed "s|replace-with-d1-id|$D1_DATABASE_ID|g" apps/frame/wrangler.jsonc > apps/frame/wrangler.deploy.jsonc
 
       - name: Apply D1 migrations
-        run: pnpm exec wrangler d1 migrations apply memory-screen --remote --config apps/web/wrangler.deploy.jsonc
+        run: pnpm exec wrangler d1 migrations apply nagori --remote --config apps/web/wrangler.deploy.jsonc
 
       - name: Deploy iPad frame
         run: pnpm exec wrangler deploy --config apps/frame/wrangler.deploy.jsonc

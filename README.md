@@ -1,6 +1,6 @@
-# Memory Screen
+# Nagori (名残)
 
-A private, self-updating family photo frame for an old iPad. Family members sign in from their phones to share photos or short notes; the paired iPad loops the active memories without requiring anyone at the frame to do anything.
+Nagori (名残) is a private, self-updating family photo frame for an old iPad. Its name evokes the traces that remain after a season or a parting: warm, bittersweet reminders of the moments shared. Family members sign in from their phones to share photos or short notes; the paired iPad loops the active memories without requiring anyone at the frame to do anything.
 
 The dashboard is a Next.js app adapted for Cloudflare Workers. The frame is a separate, deliberately tiny Worker: it has no React or Next.js client runtime, builds to a Safari 12-compatible IIFE, and uses an independent read-only device session.
 
@@ -46,8 +46,8 @@ pnpm --filter @acme/web build:cloudflare
 Create these Cloudflare resources once:
 
 ```bash
-pnpm exec wrangler d1 create memory-screen
-pnpm exec wrangler r2 bucket create memory-screen-photos
+pnpm exec wrangler d1 create nagori
+pnpm exec wrangler r2 bucket create nagori-photos
 ```
 
 Then configure the GitHub repository:
@@ -64,8 +64,8 @@ Before the first deploy, replace the temporary worker routes with your own route
 Run a D1 export before schema changes and retain the generated SQL in private storage. R2 photo objects are private and should be copied to a second private bucket on a schedule.
 
 ```bash
-pnpm exec wrangler d1 export memory-screen --remote --output memory-screen-backup.sql
-pnpm exec wrangler r2 object get memory-screen-photos <object-key> --file <local-path>
+pnpm exec wrangler d1 export nagori --remote --output nagori-backup.sql
+pnpm exec wrangler r2 object get nagori-photos <object-key> --file <local-path>
 ```
 
 To restore, first deploy the matching application revision, then import the D1 export into a new database or an approved recovery target and point a temporary worker configuration at it. Restore only the associated R2 objects; never make the bucket public. Exercise this procedure against a non-production database before relying on it.

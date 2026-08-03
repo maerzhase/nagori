@@ -1,4 +1,4 @@
-import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@memory-screen/core";
+import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@nagori/core";
 import {
   archiveSlideAction,
   createMessageAction,
@@ -39,7 +39,7 @@ function AuthShell({
       <section className="auth-story">
         <div className="wordmark">
           <Logo />
-          <span>Memory Screen</span>
+          <span>Nagori <small lang="ja">名残</small></span>
         </div>
         <div className="auth-copy">
           <p className="eyebrow">A window into family life</p>
@@ -244,7 +244,7 @@ export default async function Home({
       <aside className="sidebar">
         <a href="#top" className="brand">
           <Logo />
-          <span>Memory Screen</span>
+          <span>Nagori <small lang="ja">名残</small></span>
         </a>
         <nav>
           <a href="#top" className="active">
@@ -677,8 +677,8 @@ export default async function Home({
             </section>
           )}
           <footer>
-            Memory Screen <span>·</span> Made for slow mornings and family
-            stories.
+            Nagori <span lang="ja">名残</span> <span>·</span> The memories
+            that remain.
           </footer>
         </div>
       </main>

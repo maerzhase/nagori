@@ -1,5 +1,5 @@
 {
-  "name": "@memory-screen/core",
+  "name": "@nagori/core",
   "version": "0.0.0",
   "devDependencies": {
     "@biomejs/biome": "2.5.3",

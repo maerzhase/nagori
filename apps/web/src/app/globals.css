@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@memory-screen/ui/theme.css";
+@import "@nagori/ui/theme.css";
 @source "../../../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {

@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-const CACHE_NAME = "memory-screen-media-v1";
+const CACHE_NAME = "nagori-media-v1";
 const MAX_MEDIA_ENTRIES = 30;
 
 self.addEventListener("install", (event) => {
@@ -15,7 +15,7 @@ self.addEventListener("activate", (event) => {
         Promise.all(
           keys
             .filter(
-              (key) => key.startsWith("memory-screen-") && key !== CACHE_NAME,
+              (key) => key.startsWith("nagori-") && key !== CACHE_NAME,
             )
             .map((key) => caches.delete(key)),
         ),

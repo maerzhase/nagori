@@ -46,7 +46,7 @@ export interface DeviceRow {
   paired: number;
 }
 
-export class MemoryScreenStore {
+export class NagoriStore {
   constructor(private readonly db: Database) {}
 
   async isLoginLocked(email: string): Promise<boolean> {
@@ -617,7 +617,7 @@ export class MemoryScreenStore {
       .bind(
         randomId("device"),
         householdId,
-        name.trim() || "Family frame",
+        name.trim() || "Nagori frame",
         await sha256(code),
         expires.toISOString(),
         now.toISOString(),

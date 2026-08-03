@@ -1,4 +1,4 @@
-# Memory Screen implementation plans
+# Nagori implementation plans
 
 Generated with the `improve` skill on 2026-08-03. The repository is a fresh
 pnpm/Turborepo template, so these plans define the product and architecture as
@@ -7,7 +7,7 @@ full, honor its STOP conditions, and update the status table after each plan.
 
 ## Product in one sentence
 
-Memory Screen turns an old iPad into a calm, remotely managed family photo
+Nagori turns an old iPad into a calm, remotely managed family photo
 frame: invited relatives upload photos and short messages from their phones,
 while the iPad continuously displays the current playlist without requiring
 the grandparents to sign in or operate it.
@@ -134,7 +134,7 @@ Primary references:
 
 ```text
 Current iPhone / desktop              Original or Air 2 iPad
-app.memory-screen.example             frame.memory-screen.example
+app.nagori.example                    frame.nagori.example
 Next.js dashboard Worker              tiny legacy Frame Worker
 human session cookie                  read-only device cookie
             \                          /

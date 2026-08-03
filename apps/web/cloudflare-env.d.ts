@@ -1,6 +1,6 @@
 interface CloudflareEnv {
-  DB: import("@memory-screen/core").Database;
-  PHOTOS: import("@memory-screen/core").ObjectBucket;
+  DB: import("@nagori/core").Database;
+  PHOTOS: import("@nagori/core").ObjectBucket;
   ASSETS: Fetcher;
   ENVIRONMENT: string;
   FRAME_URL: string;

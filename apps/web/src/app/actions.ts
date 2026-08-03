@@ -6,7 +6,7 @@ import {
   hashPassword,
   isStrongEnoughPassword,
   normalizeEmail,
-} from "@memory-screen/core";
+} from "@nagori/core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -63,7 +63,7 @@ export async function loginAction(formData: FormData) {
     await store.recordFailedLogin(email);
     redirect("/?view=login&error=login");
   }
-  const { verifyPassword } = await import("@memory-screen/core");
+  const { verifyPassword } = await import("@nagori/core");
   if (
     !(await verifyPassword(
       text(formData, "password"),

@@ -76,7 +76,7 @@ function renderCurrent() {
 
 function saveManifest(value: Manifest) {
   try {
-    localStorage.setItem("memory-screen-manifest", JSON.stringify(value));
+    localStorage.setItem("nagori-manifest", JSON.stringify(value));
   } catch (_error) {
     /* storage may be disabled */
   }
@@ -84,7 +84,7 @@ function saveManifest(value: Manifest) {
 
 function loadSavedManifest(): Manifest | null {
   try {
-    return JSON.parse(localStorage.getItem("memory-screen-manifest") || "null");
+    return JSON.parse(localStorage.getItem("nagori-manifest") || "null");
   } catch (_error) {
     return null;
   }
