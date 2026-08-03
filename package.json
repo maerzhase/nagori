@@ -4,6 +4,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
     "@changesets/cli": "2.31.0",
+    "concurrently": "10.0.4",
     "syncpack": "15.3.2",
     "turbo": "2.10.4"
   },
@@ -16,7 +17,8 @@
     "build": "turbo run build",
     "changeset": "changeset",
     "check": "pnpm syncpack:lint && turbo run lint format typecheck",
-    "dev": "turbo run dev",
+    "db:migrate:local": "pnpm --filter @acme/web db:migrate:local",
+    "dev": "concurrently --kill-others --names web,frame --prefix-colors blue,magenta \"pnpm --filter @acme/web dev\" \"pnpm --filter @memory-screen/frame dev\"",
     "fix": "pnpm syncpack:fix && turbo run lint:fix format:fix",
     "format": "turbo run format",
     "format:fix": "turbo run format:fix",
@@ -26,6 +28,7 @@
     "syncpack:fix": "syncpack fix && pnpm syncpack:format",
     "syncpack:format": "syncpack format && pnpm exec biome format --write package.json packages/ui/package.json apps/web/package.json",
     "syncpack:lint": "syncpack lint",
+    "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "version-packages": "changeset version"
   }

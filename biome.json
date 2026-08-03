@@ -32,6 +32,12 @@
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
+      },
+      "performance": {
+        "noImgElement": "off"
+      },
+      "style": {
+        "noDescendingSpecificity": "off"
       }
     },
     "domains": {

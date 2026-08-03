@@ -1,0 +1,24 @@
+{
+  "name": "@memory-screen/core",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@cloudflare/workers-types": "5.20260801.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}

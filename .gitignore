@@ -3,6 +3,8 @@ node_modules
 .turbo
 .next
 .vercel
+.wrangler
+.open-next
 .output
 .cache
 build

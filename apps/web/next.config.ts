@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+initOpenNextCloudflareForDev({ persist: { path: "../../.wrangler/state/v3" } });
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@acme/ui"],
+  transpilePackages: ["@memory-screen/core"],
 };
 
 export default nextConfig;

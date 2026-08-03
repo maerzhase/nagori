@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "memory-screen-frame",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-20",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "memory-screen",
+      "database_id": "replace-with-d1-id",
+      "migrations_dir": "../../packages/core/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PHOTOS",
+      "bucket_name": "memory-screen-photos"
+    }
+  ]
+}

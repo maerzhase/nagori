@@ -1,0 +1,28 @@
+{
+  "name": "@memory-screen/frame",
+  "version": "0.0.0",
+  "dependencies": {
+    "@memory-screen/core": "workspace:*",
+    "@memory-screen/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@cloudflare/workers-types": "5.20260801.1",
+    "@tailwindcss/cli": "4.3.2",
+    "esbuild": "0.28.1",
+    "typescript": "5.9.3",
+    "wrangler": "4.118.0"
+  },
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs && tailwindcss -i src/viewer.css -o dist/viewer.css --minify",
+    "deploy": "pnpm build && wrangler deploy",
+    "dev": "pnpm build && wrangler dev --port 8788 --persist-to ../../.wrangler/state",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}

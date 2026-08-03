@@ -2,30 +2,38 @@
   "name": "@acme/web",
   "version": "0.0.0",
   "dependencies": {
-    "@acme/ui": "workspace:*",
+    "@memory-screen/core": "workspace:*",
+    "@memory-screen/ui": "workspace:*",
+    "@opennextjs/cloudflare": "1.20.2",
     "next": "16.2.11",
-    "next-themes": "^0.4.6",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
+    "@cloudflare/workers-types": "5.20260801.1",
     "@tailwindcss/postcss": "4.3.2",
     "@tsconfig/next": "2.0.6",
     "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "tailwindcss": "4.3.2",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wrangler": "4.118.0"
   },
   "private": true,
   "scripts": {
     "build": "next build",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:migrate:local": "wrangler d1 migrations apply memory-screen --local --persist-to ../../.wrangler/state",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "dev": "next dev",
     "format": "biome format .",
     "format:fix": "biome format --write .",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   }

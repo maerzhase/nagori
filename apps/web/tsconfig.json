@@ -5,12 +5,16 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "target": "ES2017",
+    "target": "ES2022",
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true,
     "plugins": [{ "name": "next" }]
   },
   "include": [
     "next-env.d.ts",
     "next.config.ts",
+    "cloudflare-env.d.ts",
+    "open-next.config.ts",
     "src/**/*",
     ".next/types/**/*.ts"
   ],

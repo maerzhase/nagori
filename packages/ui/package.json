@@ -1,6 +1,6 @@
 {
-  "name": "@acme/ui",
-  "description": "Opinionated Base UI + Tailwind component package for the monorepo template.",
+  "name": "@memory-screen/ui",
+  "description": "Shared Memory Screen design tokens and interface components.",
   "version": "0.1.0",
   "dependencies": {
     "@base-ui/react": "1.6.0",
@@ -34,7 +34,8 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./theme.css": "./src/styles/theme.css"
+    "./theme.css": "./src/styles/theme.css",
+    "./memory.css": "./src/styles/memory.css"
   },
   "files": [
     "dist",

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#171512" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <title>Memory Screen</title>
+    <link rel="stylesheet" href="/viewer.css" />
+  </head>
+  <body>
+    <main id="frame" aria-live="polite">
+      <section id="pairing" class="pairing" hidden>
+        <div class="mark">M</div>
+        <p class="eyebrow">Memory Screen</p>
+        <h1>Connect this frame</h1>
+        <p class="hint">Enter the six-digit code from your family dashboard.</p>
+        <form id="pair-form">
+          <label for="code">Pairing code</label>
+          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
+          <button type="submit">Connect frame</button>
+          <p id="pair-error" class="error" role="alert"></p>
+        </form>
+      </section>
+      <section id="empty" class="empty" hidden>
+        <div class="mark">M</div>
+        <h1>Waiting for a memory</h1>
+        <p>Your family can add photos from the dashboard.</p>
+      </section>
+      <section id="slide" class="slide" hidden>
+        <img id="photo-a" class="photo active" alt="" />
+        <img id="photo-b" class="photo" alt="" />
+        <div id="message" class="message"></div>
+        <p id="caption" class="caption"></p>
+      </section>
+      <p id="connection" class="connection" hidden>Showing saved memories · reconnecting</p>
+    </main>
+    <script src="/viewer.js"></script>
+  </body>
+</html>

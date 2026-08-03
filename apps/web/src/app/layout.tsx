@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "../components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Monorepo Template",
-  description:
-    "Opinionated pnpm + Turbo starter with a publishable UI package.",
+  title: "Memory Screen",
+  description: "A private family photo frame for the people you love.",
 };
 
 export default function RootLayout({
@@ -14,10 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }
