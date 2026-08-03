@@ -18,7 +18,7 @@ The dashboard is a Next.js app adapted for Cloudflare Workers. The frame is a se
 
 ## Run locally
 
-Use Node 20+ and pnpm 10.
+Use Node 22+ (wrangler's floor) and pnpm 10.
 
 ```bash
 pnpm install
