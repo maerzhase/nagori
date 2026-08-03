@@ -46,18 +46,16 @@ pnpm --filter @nagori/web build:cloudflare
 Create these Cloudflare resources once:
 
 ```bash
-pnpm exec wrangler d1 create nagori
-pnpm exec wrangler r2 bucket create nagori-photos
+pnpm --filter @nagori/web exec wrangler d1 create nagori
+pnpm --filter @nagori/web exec wrangler r2 bucket create nagori-photos
 ```
 
-Then configure the GitHub repository:
-
-All five values are `production` environment secrets:
+Then add five `production` environment secrets to the GitHub repository:
 
 - `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
 - `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL). These must match the `routes` in the worker configs.
 
-The token needs Workers Scripts edit, D1 edit, and R2 edit permissions for the account. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
+The token needs Workers Scripts edit, D1 edit, and R2 edit on the account, plus DNS edit on the zone so the deploy can create the custom-domain records. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
 Each worker config declares a Cloudflare custom domain: the dashboard serves `nagori.m3000.io` ([apps/web/wrangler.jsonc](apps/web/wrangler.jsonc)) and the frame serves `nagori-frame.m3000.io` ([apps/frame/wrangler.jsonc](apps/frame/wrangler.jsonc)). The first deploy creates the proxied DNS records automatically, so the zone must live in the same Cloudflare account as the workers. Change both `routes` and the matching `APP_URL`/`FRAME_URL` together to move to different hostnames.
 
@@ -68,8 +66,8 @@ The checked-in configs use a placeholder D1 ID by design; the workflow injects t
 Run a D1 export before schema changes and retain the generated SQL in private storage. R2 photo objects are private and should be copied to a second private bucket on a schedule.
 
 ```bash
-pnpm exec wrangler d1 export nagori --remote --output nagori-backup.sql
-pnpm exec wrangler r2 object get nagori-photos <object-key> --file <local-path>
+pnpm --filter @nagori/web exec wrangler d1 export nagori --remote --output nagori-backup.sql
+pnpm --filter @nagori/web exec wrangler r2 object get nagori-photos <object-key> --file <local-path>
 ```
 
 To restore, first deploy the matching application revision, then import the D1 export into a new database or an approved recovery target and point a temporary worker configuration at it. Restore only the associated R2 objects; never make the bucket public. Exercise this procedure against a non-production database before relying on it.

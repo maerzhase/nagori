@@ -52,11 +52,13 @@ jobs:
           sed "s|replace-with-d1-id|$D1_DATABASE_ID|g; s|http://localhost:3000|$APP_URL|g; s|http://localhost:8788|$FRAME_URL|g; s|\"development\"|\"production\"|" apps/web/wrangler.jsonc > apps/web/wrangler.deploy.jsonc
           sed "s|replace-with-d1-id|$D1_DATABASE_ID|g" apps/frame/wrangler.jsonc > apps/frame/wrangler.deploy.jsonc
 
+      # wrangler is a devDependency of the app packages, not the root, so these
+      # run through --filter to pick up each package's own binary and directory.
       - name: Apply D1 migrations
-        run: pnpm exec wrangler d1 migrations apply nagori --remote --config apps/web/wrangler.deploy.jsonc
+        run: pnpm --filter @nagori/web exec wrangler d1 migrations apply nagori --remote --config wrangler.deploy.jsonc
 
       - name: Deploy iPad frame
-        run: pnpm exec wrangler deploy --config apps/frame/wrangler.deploy.jsonc
+        run: pnpm --filter @nagori/frame exec wrangler deploy --config wrangler.deploy.jsonc
 
       - name: Deploy dashboard
-        run: pnpm exec wrangler deploy --config apps/web/wrangler.deploy.jsonc
+        run: pnpm --filter @nagori/web exec wrangler deploy --config wrangler.deploy.jsonc
