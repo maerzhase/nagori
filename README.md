@@ -50,10 +50,11 @@ pnpm --filter @nagori/web exec wrangler d1 create nagori
 pnpm --filter @nagori/web exec wrangler r2 bucket create nagori-photos
 ```
 
-Then add five `production` environment secrets to the GitHub repository:
+Then add six `production` environment secrets to the GitHub repository:
 
 - `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
 - `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL). These must match the `routes` in the worker configs.
+- `INITIAL_OWNER_EMAIL`. In production, first-run setup only accepts this address, so a stranger cannot claim the dashboard before you do. Without it every registration attempt is rejected.
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit on the account, plus DNS edit on the zone so the deploy can create the custom-domain records. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 

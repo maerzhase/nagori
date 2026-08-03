@@ -12,7 +12,8 @@
   "vars": {
     "ENVIRONMENT": "development",
     "FRAME_URL": "http://localhost:8788",
-    "APP_URL": "http://localhost:3000"
+    "APP_URL": "http://localhost:3000",
+    "INITIAL_OWNER_EMAIL": "replace-with-owner-email"
   },
   "d1_databases": [
     {

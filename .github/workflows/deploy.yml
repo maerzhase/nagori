@@ -22,6 +22,7 @@ jobs:
       D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
       APP_URL: ${{ secrets.APP_URL }}
       FRAME_URL: ${{ secrets.FRAME_URL }}
+      INITIAL_OWNER_EMAIL: ${{ secrets.INITIAL_OWNER_EMAIL }}
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -49,7 +50,8 @@ jobs:
           test -n "$D1_DATABASE_ID"
           test -n "$APP_URL"
           test -n "$FRAME_URL"
-          sed "s|replace-with-d1-id|$D1_DATABASE_ID|g; s|http://localhost:3000|$APP_URL|g; s|http://localhost:8788|$FRAME_URL|g; s|\"development\"|\"production\"|" apps/web/wrangler.jsonc > apps/web/wrangler.deploy.jsonc
+          test -n "$INITIAL_OWNER_EMAIL"
+          sed "s|replace-with-d1-id|$D1_DATABASE_ID|g; s|http://localhost:3000|$APP_URL|g; s|http://localhost:8788|$FRAME_URL|g; s|replace-with-owner-email|$INITIAL_OWNER_EMAIL|g; s|\"development\"|\"production\"|" apps/web/wrangler.jsonc > apps/web/wrangler.deploy.jsonc
           sed "s|replace-with-d1-id|$D1_DATABASE_ID|g" apps/frame/wrangler.jsonc > apps/frame/wrangler.deploy.jsonc
 
       # wrangler is a devDependency of the app packages, not the root, so these

@@ -76,7 +76,9 @@ function AuthShell({
                 ? "That email and password don’t match."
                 : error === "rate_limited"
                   ? "Too many attempts. Please wait 15 minutes and try again."
-                  : "Please check the details and use a password with at least 12 characters."}
+                  : error === "owner_email"
+                    ? "Setup is reserved for this deployment’s configured owner email."
+                    : "Please check the details and use a password with at least 12 characters."}
             </div>
           )}
           <form
