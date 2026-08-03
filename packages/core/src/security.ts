@@ -34,7 +34,10 @@ export async function hashPassword(password: string, salt = randomToken(16)) {
       name: "PBKDF2",
       hash: "SHA-256",
       salt: encoder.encode(salt),
-      iterations: 210_000,
+      // Workers' Web Crypto rejects anything above 100000 outright, so this is
+      // the ceiling rather than a tuned value. Changing it invalidates every
+      // stored hash: the parameters are implicit, not recorded per user.
+      iterations: 100_000,
     },
     key,
     256,
