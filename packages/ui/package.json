@@ -1,0 +1,69 @@
+{
+  "name": "@acme/ui",
+  "description": "Opinionated Base UI + Tailwind component package for the monorepo template.",
+  "version": "0.1.0",
+  "dependencies": {
+    "@base-ui/react": "1.6.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.6.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@storybook/addon-a11y": "10.4.6",
+    "@storybook/addon-docs": "10.4.6",
+    "@storybook/addon-themes": "10.4.6",
+    "@storybook/react": "10.4.6",
+    "@storybook/react-vite": "10.4.6",
+    "@tailwindcss/cli": "4.3.2",
+    "@tailwindcss/postcss": "4.3.2",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "storybook": "10.4.6",
+    "tailwindcss": "4.3.2",
+    "tsdown": "0.22.4",
+    "typescript": "5.9.3",
+    "vite-tsconfig-paths": "6.1.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./theme.css": "./src/styles/theme.css"
+  },
+  "files": [
+    "dist",
+    "src/styles"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "peerDependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown && tailwindcss -i src/styles/styles.css -o dist/styles.css --minify",
+    "build-storybook": "storybook build",
+    "dev": "tsdown --watch",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "storybook": "storybook dev -p 6007",
+    "typecheck": "tsc --noEmit"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.ts"
+}

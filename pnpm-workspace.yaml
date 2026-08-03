@@ -1,0 +1,29 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# Supply-chain safeguards. New releases are quarantined for 24 hours, trust
+# evidence may not regress, transitive dependencies must come from trusted
+# sources, and dependency lifecycle scripts require an explicit review decision.
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Storybook -> react-docgen -> Babel requires this signed 2023 npm release,
+  # which predates provenance attestations. Keep the exception version-specific.
+  - "semver@6.3.1"
+blockExoticSubdeps: true
+strictDepBuilds: true
+allowBuilds:
+  "@parcel/watcher": true
+  esbuild: true
+  sharp: true
+verifyDepsBeforeRun: error
+
+# Force patched transitive releases where current upstream manifests still
+# resolve versions covered by npm security advisories.
+overrides:
+  "postcss@<8.5.23": "8.5.25"
+  "sharp@<0.35.0": "0.35.3"
+  "brace-expansion@>=4.0.0 <5.0.9": "5.0.9"
+  "esbuild@>=0.27.3 <0.28.1": "0.28.1"
+  "vite@>=7.0.0 <=7.3.4": "7.3.6"
