@@ -7,6 +7,7 @@ import {
   loginAction,
   logoutAction,
   revokeDeviceAction,
+  renewSlideAction,
   rescheduleSlideAction,
   setupAction,
   updateSettingsAction,
@@ -491,12 +492,12 @@ export default async function Home({
                   <div>
                     <h3>Coming up</h3>
                     {grouped.upcoming.map((slide) => (
-                      <p key={slide.id}>
+                      <div className="schedule-item" key={slide.id}>
                         <strong>
                           {slide.caption || slide.message?.slice(0, 45)}
                         </strong>
                         <span>Starts {formatDate(slide.displayFrom)}</span>
-                      </p>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -504,12 +505,32 @@ export default async function Home({
                   <div>
                     <h3>Ready to archive</h3>
                     {grouped.expired.map((slide) => (
-                      <p key={slide.id}>
+                      <div className="schedule-item" key={slide.id}>
                         <strong>
                           {slide.caption || slide.message?.slice(0, 45)}
                         </strong>
                         <span>Ended {formatDate(slide.displayUntil)}</span>
-                      </p>
+                        <form action={renewSlideAction}>
+                          <input
+                            type="hidden"
+                            name="slideId"
+                            value={slide.id}
+                          />
+                          <button className="text-button" type="submit">
+                            Renew for {settings.defaultVisibilityDays} days
+                          </button>
+                        </form>
+                        <form action={archiveSlideAction}>
+                          <input
+                            type="hidden"
+                            name="slideId"
+                            value={slide.id}
+                          />
+                          <button className="text-button" type="submit">
+                            Archive
+                          </button>
+                        </form>
+                      </div>
                     ))}
                   </div>
                 )}

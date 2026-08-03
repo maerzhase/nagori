@@ -2,6 +2,7 @@
 
 import {
   clampDisplaySeconds,
+  defaultSchedule,
   hashPassword,
   isStrongEnoughPassword,
   normalizeEmail,
@@ -133,6 +134,23 @@ export async function rescheduleSlideAction(formData: FormData) {
   }
   revalidatePath("/");
   redirect("/?saved=schedule#library");
+}
+
+export async function renewSlideAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role === "viewer") redirect("/?error=permission");
+  const store = getStore();
+  const settings = await store.getSettings(user.householdId);
+  const schedule = defaultSchedule(new Date(), settings.defaultVisibilityDays);
+  await store.rescheduleSlide({
+    householdId: user.householdId,
+    userId: user.id,
+    slideId: text(formData, "slideId"),
+    displayFrom: schedule.displayFrom,
+    displayUntil: schedule.displayUntil,
+  });
+  revalidatePath("/");
+  redirect("/?saved=renewed#library");
 }
 
 export async function archiveSlideAction(formData: FormData) {

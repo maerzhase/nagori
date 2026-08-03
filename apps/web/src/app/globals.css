@@ -721,6 +721,23 @@ textarea {
   gap: 1rem;
   margin-top: 1.5rem;
 }
+
+.schedule-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0;
+}
+
+.schedule-item strong,
+.schedule-item span {
+  min-width: 100%;
+}
+
+.schedule-item form {
+  margin: 0;
+}
 .schedule-groups > div {
   border-top: 1px solid var(--line);
   padding-top: 1rem;
