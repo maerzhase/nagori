@@ -92,12 +92,19 @@ function loadSavedManifest(): Manifest | null {
 
 async function refresh() {
   try {
+    const headers: Record<string, string> = {};
+    if (manifest) headers["if-none-match"] = `W/"${manifest.revision}"`;
     const response = await fetch("/api/manifest", {
       credentials: "same-origin",
       cache: "no-store",
+      headers,
     });
     if (response.status === 401) {
       showOnly(pairing);
+      return;
+    }
+    if (response.status === 304) {
+      connection.hidden = true;
       return;
     }
     if (!response.ok) throw new Error("manifest unavailable");

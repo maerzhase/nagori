@@ -85,17 +85,15 @@ export default {
       if (!device)
         return secure(json({ error: "not_paired" }, { status: 401 }));
       await store.touchDevice(device.id);
-      return secure(
-        json(
-          await store.getManifest(
-            device.householdId,
-            `${url.origin}/api/media`,
-          ),
-          {
-            headers: { etag: `W/"${device.householdId}"` },
-          },
-        ),
+      const manifest = await store.getManifest(
+        device.householdId,
+        `${url.origin}/api/media`,
       );
+      const etag = `W/"${manifest.revision}"`;
+      if (request.headers.get("if-none-match") === etag) {
+        return secure(new Response(null, { status: 304, headers: { etag } }));
+      }
+      return secure(json(manifest, { headers: { etag } }));
     }
 
     if (url.pathname.startsWith("/api/media/") && request.method === "GET") {
