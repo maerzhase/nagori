@@ -90,6 +90,17 @@ function loadSavedManifest(): Manifest | null {
   }
 }
 
+function warmPhotos(value: Manifest) {
+  const photos = value.slides
+    .filter((item) => item.kind === "photo" && item.mediaUrl)
+    .slice(0, 2);
+  for (const photo of photos) {
+    void fetch(photo.mediaUrl as string, { credentials: "same-origin" }).catch(
+      () => undefined,
+    );
+  }
+}
+
 async function refresh() {
   try {
     const headers: Record<string, string> = {};
@@ -114,6 +125,7 @@ async function refresh() {
       manifest = next;
       current = 0;
       saveManifest(next);
+      warmPhotos(next);
       renderCurrent();
     }
   } catch (_error) {
@@ -145,7 +157,13 @@ document
   });
 
 manifest = loadSavedManifest();
-if (manifest) renderCurrent();
+if (manifest) {
+  warmPhotos(manifest);
+  renderCurrent();
+}
+if ("serviceWorker" in navigator) {
+  void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+}
 void refresh();
 window.setInterval(refresh, 60_000);
 document.addEventListener("visibilitychange", () => {

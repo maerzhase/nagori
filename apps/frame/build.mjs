@@ -13,3 +13,12 @@ await build({
   minify: true,
   legalComments: "none",
 });
+await build({
+  entryPoints: ["src/service-worker.ts"],
+  outfile: "dist/sw.js",
+  bundle: true,
+  format: "iife",
+  target: ["safari12"],
+  minify: true,
+  legalComments: "none",
+});
