@@ -49,6 +49,99 @@ export interface DeviceRow {
 export class MemoryScreenStore {
   constructor(private readonly db: Database) {}
 
+  async isLoginLocked(email: string): Promise<boolean> {
+    const attempt = await this.db
+      .prepare(
+        "SELECT locked_until AS lockedUntil FROM login_attempts WHERE email_hash = ?",
+      )
+      .bind(await sha256(email))
+      .first<{ lockedUntil: string | null }>();
+    return Boolean(
+      attempt?.lockedUntil &&
+        new Date(attempt.lockedUntil).getTime() > Date.now(),
+    );
+  }
+
+  async recordFailedLogin(email: string): Promise<void> {
+    const key = await sha256(email);
+    const now = new Date();
+    const existing = await this.db
+      .prepare(
+        "SELECT failures, window_started_at AS windowStartedAt FROM login_attempts WHERE email_hash = ?",
+      )
+      .bind(key)
+      .first<{ failures: number; windowStartedAt: string }>();
+    const withinWindow =
+      existing &&
+      now.getTime() - new Date(existing.windowStartedAt).getTime() <
+        15 * 60_000;
+    const failures = withinWindow ? existing.failures + 1 : 1;
+    const lockedUntil =
+      failures >= 5
+        ? new Date(now.getTime() + 15 * 60_000).toISOString()
+        : null;
+    await this.db
+      .prepare(
+        "INSERT INTO login_attempts (email_hash, failures, window_started_at, locked_until) VALUES (?, ?, ?, ?) ON CONFLICT(email_hash) DO UPDATE SET failures = excluded.failures, window_started_at = excluded.window_started_at, locked_until = excluded.locked_until",
+      )
+      .bind(
+        key,
+        failures,
+        withinWindow ? existing.windowStartedAt : now.toISOString(),
+        lockedUntil,
+      )
+      .run();
+  }
+
+  async clearFailedLogins(email: string): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM login_attempts WHERE email_hash = ?")
+      .bind(await sha256(email))
+      .run();
+  }
+
+  async consumeRateLimit(input: {
+    scope: string;
+    identifier: string;
+    maxAttempts: number;
+    windowMs: number;
+  }): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const key = await sha256(`${input.scope}:${input.identifier}`);
+    const now = new Date();
+    const existing = await this.db
+      .prepare(
+        "SELECT attempts, reset_at AS resetAt FROM request_limits WHERE key_hash = ?",
+      )
+      .bind(key)
+      .first<{ attempts: number; resetAt: string }>();
+    const keepWindow =
+      existing && new Date(existing.resetAt).getTime() > now.getTime();
+    const resetAt = keepWindow
+      ? new Date(existing.resetAt)
+      : new Date(now.getTime() + input.windowMs);
+    const attempts = keepWindow ? existing.attempts + 1 : 1;
+    const allowed = attempts <= input.maxAttempts;
+    await this.db
+      .prepare(
+        "INSERT INTO request_limits (key_hash, attempts, reset_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(key_hash) DO UPDATE SET attempts = excluded.attempts, reset_at = excluded.reset_at, updated_at = excluded.updated_at",
+      )
+      .bind(
+        key,
+        attempts,
+        resetAt.toISOString(),
+        now.toISOString(),
+        now.toISOString(),
+      )
+      .run();
+    return {
+      allowed,
+      retryAfterSeconds: Math.max(
+        1,
+        Math.ceil((resetAt.getTime() - now.getTime()) / 1000),
+      ),
+    };
+  }
+
   async hasUsers(): Promise<boolean> {
     const row = await this.db
       .prepare("SELECT COUNT(*) AS count FROM users")

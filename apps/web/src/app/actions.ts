@@ -54,8 +54,14 @@ export async function setupAction(formData: FormData) {
 export async function loginAction(formData: FormData) {
   const store = getStore();
   const email = normalizeEmail(text(formData, "email"));
+  if (await store.isLoginLocked(email)) {
+    redirect("/?view=login&error=rate_limited");
+  }
   const user = await store.findPasswordUser(email);
-  if (!user) redirect("/?view=login&error=login");
+  if (!user) {
+    await store.recordFailedLogin(email);
+    redirect("/?view=login&error=login");
+  }
   const { verifyPassword } = await import("@memory-screen/core");
   if (
     !(await verifyPassword(
@@ -64,8 +70,10 @@ export async function loginAction(formData: FormData) {
       user.passwordHash,
     ))
   ) {
+    await store.recordFailedLogin(email);
     redirect("/?view=login&error=login");
   }
+  await store.clearFailedLogins(email);
   await setSessionCookie(await store.createSession(user.id));
   redirect("/");
 }

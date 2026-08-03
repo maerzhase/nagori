@@ -61,6 +61,26 @@ export default {
     }
 
     if (url.pathname === "/api/pair" && request.method === "POST") {
+      const limit = await store.consumeRateLimit({
+        scope: "pair",
+        identifier:
+          request.headers.get("cf-connecting-ip") ??
+          request.headers.get("x-forwarded-for") ??
+          "unknown",
+        maxAttempts: 10,
+        windowMs: 15 * 60_000,
+      });
+      if (!limit.allowed) {
+        return secure(
+          json(
+            { error: "too_many_attempts" },
+            {
+              status: 429,
+              headers: { "retry-after": String(limit.retryAfterSeconds) },
+            },
+          ),
+        );
+      }
       const body = (await request.json()) as { code?: string };
       const code = body.code;
       if (!code || !/^\d{6}$/.test(code))

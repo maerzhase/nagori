@@ -71,7 +71,9 @@ function AuthShell({
             <div className="alert">
               {error === "login"
                 ? "That email and password don’t match."
-                : "Please check the details and use a password with at least 12 characters."}
+                : error === "rate_limited"
+                  ? "Too many attempts. Please wait 15 minutes and try again."
+                  : "Please check the details and use a password with at least 12 characters."}
             </div>
           )}
           <form
