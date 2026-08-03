@@ -26,8 +26,14 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "active_limit" }, { status: 409 });
   }
+  // R2 refuses a stream of unknown length, and the nodejs runtime's shimmed
+  // request.body has none, so read the bytes first. MAX_BYTES bounds this, and
+  // the real length is more trustworthy than the client's x-file-size header.
+  const bytes = await request.arrayBuffer();
+  if (bytes.byteLength <= 0 || bytes.byteLength > MAX_BYTES)
+    return NextResponse.json({ error: "invalid_size" }, { status: 413 });
   const key = `${user.householdId}/${new Date().toISOString().slice(0, 10)}/${randomId("photo")}.jpg`;
-  await getEnv().PHOTOS.put(key, request.body, {
+  await getEnv().PHOTOS.put(key, bytes, {
     httpMetadata: { contentType },
   });
   try {
@@ -38,7 +44,7 @@ export async function POST(request: Request) {
       userId: user.id,
       r2Key: key,
       contentType,
-      sizeBytes: size,
+      sizeBytes: bytes.byteLength,
       caption: decodeURIComponent(request.headers.get("x-caption") ?? ""),
       displayFrom: request.headers.get("x-display-from") || undefined,
       displayUntil: request.headers.has("x-display-until")
