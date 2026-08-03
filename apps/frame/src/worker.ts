@@ -1,8 +1,4 @@
-import {
-  NagoriStore,
-  type Database,
-  type ObjectBucket,
-} from "@nagori/core";
+import { NagoriStore, type Database, type ObjectBucket } from "@nagori/core";
 
 interface Env {
   DB: Database;
