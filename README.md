@@ -36,7 +36,7 @@ The local database and object storage live in `.wrangler/state/` and are intenti
 pnpm test
 pnpm check
 pnpm build
-pnpm --filter @acme/web build:cloudflare
+pnpm --filter @nagori/web build:cloudflare
 ```
 
 `pnpm test` runs the focused schedule lifecycle tests. The Cloudflare build command validates the worker bundle used by production.
@@ -53,11 +53,13 @@ pnpm exec wrangler r2 bucket create nagori-photos
 Then configure the GitHub repository:
 
 - Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_D1_DATABASE_ID`.
-- Production environment variables: `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL).
+- Production environment variables: `APP_URL` (dashboard HTTPS URL) and `FRAME_URL` (the iPad viewer HTTPS URL). These must match the `routes` in the worker configs.
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit permissions for the account. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
-Before the first deploy, replace the temporary worker routes with your own routes/custom domains in Cloudflare. The checked-in configs use a placeholder D1 ID by design; the workflow injects the production ID without committing it.
+Each worker config declares a Cloudflare custom domain: the dashboard serves `nagori.m3000.io` ([apps/web/wrangler.jsonc](apps/web/wrangler.jsonc)) and the frame serves `nagori-frame.m3000.io` ([apps/frame/wrangler.jsonc](apps/frame/wrangler.jsonc)). The first deploy creates the proxied DNS records automatically, so the zone must live in the same Cloudflare account as the workers. Change both `routes` and the matching `APP_URL`/`FRAME_URL` together to move to different hostnames.
+
+The checked-in configs use a placeholder D1 ID by design; the workflow injects the production ID without committing it.
 
 ## Backup and recovery
 

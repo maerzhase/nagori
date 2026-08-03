@@ -42,7 +42,7 @@ jobs:
         run: pnpm check && pnpm test
 
       - name: Build deployment artifacts
-        run: pnpm --filter @nagori/frame build && pnpm --filter @acme/web build:cloudflare
+        run: pnpm --filter @nagori/frame build && pnpm --filter @nagori/web build:cloudflare
 
       - name: Create production worker configuration
         run: |

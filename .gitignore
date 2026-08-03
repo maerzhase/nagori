@@ -16,3 +16,4 @@ storybook-static
 *.tsbuildinfo
 packages/*/dist/
 packages/*/.turbo/
+apps/*/wrangler.deploy.jsonc

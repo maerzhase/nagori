@@ -3,6 +3,7 @@
   "name": "nagori-frame",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-20",
+  "routes": [{ "pattern": "nagori-frame.m3000.io", "custom_domain": true }],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
