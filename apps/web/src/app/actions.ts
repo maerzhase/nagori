@@ -83,7 +83,9 @@ export async function createMessageAction(formData: FormData) {
   if (user.role === "viewer") redirect("/?error=permission");
   const message = text(formData, "message");
   if (!message || message.length > 280) redirect("/?error=message");
-  await getStore().createMessageSlide({
+  const store = getStore();
+  const settings = await store.getSettings(user.householdId);
+  await store.createMessageSlide({
     householdId: user.householdId,
     userId: user.id,
     message,
@@ -93,9 +95,36 @@ export async function createMessageAction(formData: FormData) {
       text(formData, "forever") === "yes"
         ? null
         : (safeDate(text(formData, "displayUntil"), true) ?? undefined),
+    defaultVisibilityDays: settings.defaultVisibilityDays,
   });
   revalidatePath("/");
   redirect("/?created=message");
+}
+
+export async function rescheduleSlideAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role === "viewer") redirect("/?error=permission");
+  const displayFrom = safeDate(text(formData, "displayFrom"));
+  const displayUntil =
+    text(formData, "forever") === "yes"
+      ? null
+      : safeDate(text(formData, "displayUntil"), true);
+  if (!displayFrom || (!displayUntil && text(formData, "forever") !== "yes")) {
+    redirect("/?error=schedule");
+  }
+  try {
+    await getStore().rescheduleSlide({
+      householdId: user.householdId,
+      userId: user.id,
+      slideId: text(formData, "slideId"),
+      displayFrom,
+      displayUntil,
+    });
+  } catch {
+    redirect("/?error=schedule");
+  }
+  revalidatePath("/");
+  redirect("/?saved=schedule#library");
 }
 
 export async function archiveSlideAction(formData: FormData) {
@@ -136,14 +165,19 @@ export async function updateSettingsAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "owner") redirect("/?error=permission");
   const seconds = clampDisplaySeconds(Number(text(formData, "displaySeconds")));
+  const visibilityDays = Number(text(formData, "defaultVisibilityDays"));
+  const defaultVisibilityDays = [7, 30, 60, 90].includes(visibilityDays)
+    ? visibilityDays
+    : 30;
   await getEnv()
     .DB.prepare(
-      "UPDATE viewer_settings SET display_seconds = ?, fit_mode = ?, show_captions = ? WHERE household_id = ?",
+      "UPDATE viewer_settings SET display_seconds = ?, fit_mode = ?, show_captions = ?, default_visibility_days = ? WHERE household_id = ?",
     )
     .bind(
       seconds,
       text(formData, "fitMode") === "cover" ? "cover" : "contain",
       formData.get("showCaptions") ? 1 : 0,
+      defaultVisibilityDays,
       user.householdId,
     )
     .run();

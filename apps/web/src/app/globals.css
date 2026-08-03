@@ -670,6 +670,26 @@ textarea {
   color: var(--muted);
   font-size: 0.68rem;
 }
+.schedule-editor {
+  border-top: 1px solid var(--line);
+  padding: 0.8rem 1rem 1rem;
+}
+.schedule-editor summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+.schedule-editor form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.schedule-editor .check,
+.schedule-editor .text-button {
+  grid-column: 1 / -1;
+  margin: 0;
+}
 .empty-library {
   display: grid;
   min-height: 240px;

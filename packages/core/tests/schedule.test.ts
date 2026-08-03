@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { defaultSchedule, isVisible, scheduleStatus } from "../src/schedule";
+import {
+  defaultSchedule,
+  isValidScheduleWindow,
+  isVisible,
+  scheduleStatus,
+} from "../src/schedule";
 
 const now = new Date("2026-08-03T12:00:00.000Z");
 
@@ -64,6 +69,15 @@ describe("slide scheduling", () => {
         },
         now,
       ),
+    ).toBe(true);
+  });
+
+  it("rejects a schedule that ends before or at its start", () => {
+    expect(
+      isValidScheduleWindow("2026-08-03T12:00:00Z", "2026-08-03T12:00:00Z"),
+    ).toBe(false);
+    expect(
+      isValidScheduleWindow("2026-08-03T12:00:00Z", "2026-08-03T12:00:01Z"),
     ).toBe(true);
   });
 });

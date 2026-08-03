@@ -7,6 +7,7 @@ import {
   loginAction,
   logoutAction,
   revokeDeviceAction,
+  rescheduleSlideAction,
   setupAction,
   updateSettingsAction,
 } from "./actions";
@@ -184,6 +185,10 @@ function formatDate(value: string | null) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function dateInputValue(value: string | null) {
+  return value ? value.slice(0, 10) : "";
 }
 
 export default async function Home({
@@ -444,6 +449,36 @@ export default async function Home({
                         </button>
                       </form>
                     </div>
+                    <details className="schedule-editor">
+                      <summary>Change schedule</summary>
+                      <form action={rescheduleSlideAction}>
+                        <input type="hidden" name="slideId" value={slide.id} />
+                        <label>
+                          From
+                          <input
+                            name="displayFrom"
+                            type="date"
+                            defaultValue={dateInputValue(slide.displayFrom)}
+                            required
+                          />
+                        </label>
+                        <label>
+                          Until
+                          <input
+                            name="displayUntil"
+                            type="date"
+                            defaultValue={dateInputValue(slide.displayUntil)}
+                          />
+                        </label>
+                        <label className="check">
+                          <input name="forever" type="checkbox" value="yes" />
+                          Keep in rotation forever
+                        </label>
+                        <button className="text-button" type="submit">
+                          Save schedule
+                        </button>
+                      </form>
+                    </details>
                   </article>
                 ))}
               </div>
@@ -513,6 +548,18 @@ export default async function Home({
                   <select name="fitMode" defaultValue={settings.fitMode}>
                     <option value="contain">Show whole photo</option>
                     <option value="cover">Fill the screen</option>
+                  </select>
+                </label>
+                <label>
+                  Default lifetime
+                  <select
+                    name="defaultVisibilityDays"
+                    defaultValue={settings.defaultVisibilityDays}
+                  >
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="60">60 days</option>
+                    <option value="90">90 days</option>
                   </select>
                 </label>
                 <label className="check">

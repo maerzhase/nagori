@@ -1,4 +1,8 @@
-import { ACTIVE_SLIDE_LIMIT, defaultSchedule } from "./schedule";
+import {
+  ACTIVE_SLIDE_LIMIT,
+  defaultSchedule,
+  isValidScheduleWindow,
+} from "./schedule";
 import { randomId, sha256 } from "./security";
 import type {
   Database,
@@ -302,6 +306,7 @@ export class MemoryScreenStore {
     caption?: string;
     displayFrom?: string;
     displayUntil?: string | null;
+    defaultVisibilityDays?: number;
   }): Promise<string> {
     if (
       (await this.countActiveSlides(input.householdId)) >= ACTIVE_SLIDE_LIMIT
@@ -309,7 +314,15 @@ export class MemoryScreenStore {
       throw new Error("ACTIVE_SLIDE_LIMIT");
     }
     const now = new Date();
-    const schedule = defaultSchedule(now);
+    const schedule = defaultSchedule(now, input.defaultVisibilityDays);
+    const displayFrom = input.displayFrom ?? schedule.displayFrom;
+    const displayUntil =
+      input.displayUntil === undefined
+        ? schedule.displayUntil
+        : input.displayUntil;
+    if (!isValidScheduleWindow(displayFrom, displayUntil)) {
+      throw new Error("INVALID_SCHEDULE");
+    }
     const mediaId = randomId("media");
     const slideId = randomId("slide");
     await this.db.batch([
@@ -335,10 +348,8 @@ export class MemoryScreenStore {
           input.householdId,
           mediaId,
           input.caption?.trim() || null,
-          input.displayFrom ?? schedule.displayFrom,
-          input.displayUntil === undefined
-            ? schedule.displayUntil
-            : input.displayUntil,
+          displayFrom,
+          displayUntil,
           input.userId,
           now.toISOString(),
           now.toISOString(),
@@ -362,6 +373,7 @@ export class MemoryScreenStore {
     theme?: string;
     displayFrom?: string;
     displayUntil?: string | null;
+    defaultVisibilityDays?: number;
   }): Promise<string> {
     if (
       (await this.countActiveSlides(input.householdId)) >= ACTIVE_SLIDE_LIMIT
@@ -369,7 +381,15 @@ export class MemoryScreenStore {
       throw new Error("ACTIVE_SLIDE_LIMIT");
     }
     const now = new Date();
-    const schedule = defaultSchedule(now);
+    const schedule = defaultSchedule(now, input.defaultVisibilityDays);
+    const displayFrom = input.displayFrom ?? schedule.displayFrom;
+    const displayUntil =
+      input.displayUntil === undefined
+        ? schedule.displayUntil
+        : input.displayUntil;
+    if (!isValidScheduleWindow(displayFrom, displayUntil)) {
+      throw new Error("INVALID_SCHEDULE");
+    }
     const slideId = randomId("slide");
     await this.db.batch([
       this.db
@@ -381,10 +401,8 @@ export class MemoryScreenStore {
           input.householdId,
           input.message.trim(),
           input.theme ?? "paper",
-          input.displayFrom ?? schedule.displayFrom,
-          input.displayUntil === undefined
-            ? schedule.displayUntil
-            : input.displayUntil,
+          displayFrom,
+          displayUntil,
           input.userId,
           now.toISOString(),
           now.toISOString(),
@@ -429,6 +447,48 @@ export class MemoryScreenStore {
       this.auditStatement(householdId, userId, "slide.archived", slideId, now),
     ]);
     return asset.r2Key;
+  }
+
+  async rescheduleSlide(input: {
+    householdId: string;
+    userId: string;
+    slideId: string;
+    displayFrom: string;
+    displayUntil: string | null;
+  }): Promise<boolean> {
+    if (!isValidScheduleWindow(input.displayFrom, input.displayUntil)) {
+      throw new Error("INVALID_SCHEDULE");
+    }
+    const existing = await this.db
+      .prepare(
+        "SELECT id FROM slides WHERE id = ? AND household_id = ? AND state != 'archived'",
+      )
+      .bind(input.slideId, input.householdId)
+      .first<{ id: string }>();
+    if (!existing) return false;
+    const now = new Date();
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE slides SET display_from = ?, display_until = ?, updated_at = ? WHERE id = ? AND household_id = ?",
+        )
+        .bind(
+          input.displayFrom,
+          input.displayUntil,
+          now.toISOString(),
+          input.slideId,
+          input.householdId,
+        ),
+      this.bumpRevisionStatement(input.householdId),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "slide.rescheduled",
+        input.slideId,
+        now,
+      ),
+    ]);
+    return true;
   }
 
   async getSettings(householdId: string): Promise<ViewerSettings> {

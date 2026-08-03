@@ -31,7 +31,9 @@ export async function POST(request: Request) {
     httpMetadata: { contentType },
   });
   try {
-    const id = await getStore().createPhotoSlide({
+    const store = getStore();
+    const settings = await store.getSettings(user.householdId);
+    const id = await store.createPhotoSlide({
       householdId: user.householdId,
       userId: user.id,
       r2Key: key,
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
       displayUntil: request.headers.has("x-display-until")
         ? request.headers.get("x-display-until")
         : undefined,
+      defaultVisibilityDays: settings.defaultVisibilityDays,
     });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {

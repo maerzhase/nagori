@@ -47,3 +47,13 @@ export function clampDisplaySeconds(value: number): number {
   if (!Number.isFinite(value)) return 12;
   return Math.min(60, Math.max(5, Math.round(value)));
 }
+
+export function isValidScheduleWindow(
+  displayFrom: string,
+  displayUntil: string | null,
+): boolean {
+  if (!displayUntil) return !Number.isNaN(new Date(displayFrom).getTime());
+  const from = new Date(displayFrom).getTime();
+  const until = new Date(displayUntil).getTime();
+  return !Number.isNaN(from) && !Number.isNaN(until) && until > from;
+}
