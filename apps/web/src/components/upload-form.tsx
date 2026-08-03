@@ -11,16 +11,16 @@ function isoAt(value: string, end = false) {
 }
 
 async function browserSafeImage(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
+  const source = await loadImage(file);
   const max = 2200;
-  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, max / Math.max(source.width, source.height));
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
+  canvas.width = Math.round(source.width * scale);
+  canvas.height = Math.round(source.height * scale);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Image conversion is unavailable");
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
+  context.drawImage(source.image, 0, 0, canvas.width, canvas.height);
+  source.close();
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) =>
@@ -31,6 +31,94 @@ async function browserSafeImage(file: File): Promise<Blob> {
   );
 }
 
+async function loadImage(file: File): Promise<{
+  image: CanvasImageSource;
+  width: number;
+  height: number;
+  close: () => void;
+}> {
+  if ("createImageBitmap" in window) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      return {
+        image: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        close: () => bitmap.close(),
+      };
+    } catch {
+      // Safari can decode some camera formats through an <img> but not ImageBitmap.
+    }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("Could not read this image"));
+      element.src = url;
+    });
+    return {
+      image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      close: () => URL.revokeObjectURL(url),
+    };
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    throw error;
+  }
+}
+
+function upload(
+  body: Blob,
+  headers: Record<string, string>,
+  onProgress: (percent: number) => void,
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", "/api/slides/photo");
+    Object.entries(headers).forEach(([key, value]) => {
+      request.setRequestHeader(key, value);
+    });
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable)
+        onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300)
+        resolve(request.status);
+      else
+        reject(
+          Object.assign(new Error("Upload failed"), { status: request.status }),
+        );
+    };
+    request.onerror = () => reject(new Error("Upload failed"));
+    request.send(body);
+  });
+}
+
+async function uploadWithRetry(
+  body: Blob,
+  headers: Record<string, string>,
+  onProgress: (percent: number) => void,
+  onRetry: () => void,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await upload(body, headers, onProgress);
+    } catch (error) {
+      const status = Number((error as { status?: number }).status ?? 0);
+      if (attempt === 2 || (status >= 400 && status < 500 && status !== 429))
+        throw error;
+      onRetry();
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, 800 * (attempt + 1)),
+      );
+    }
+  }
+}
+
 export function UploadForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -38,6 +126,7 @@ export function UploadForm() {
     "idle",
   );
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState("");
 
   return (
     <form
@@ -47,12 +136,14 @@ export function UploadForm() {
         event.preventDefault();
         setState("working");
         setError("");
+        setProgress("Preparing photo…");
         try {
           const data = new FormData(event.currentTarget);
           const file = data.get("photo");
           if (!(file instanceof File) || file.size === 0)
             throw new Error("Choose a photo first.");
           const body = await browserSafeImage(file);
+          setProgress("Uploading…");
           const from = isoAt(String(data.get("displayFrom") || ""));
           const forever = data.get("forever") === "yes";
           const until = forever
@@ -67,24 +158,29 @@ export function UploadForm() {
           };
           if (from) headers["x-display-from"] = from;
           if (forever || until) headers["x-display-until"] = until;
-          const response = await fetch("/api/slides/photo", {
-            method: "POST",
-            headers,
+          const status = await uploadWithRetry(
             body,
-          });
-          if (!response.ok)
-            throw new Error(
-              response.status === 409
-                ? "The frame already has 200 active slides."
-                : "The upload did not complete.",
-            );
+            headers,
+            (percent) => setProgress(`Uploading… ${percent}%`),
+            () => setProgress("Connection interrupted — retrying…"),
+          );
+          if (status === 409)
+            throw new Error("The frame already has 200 active slides.");
           formRef.current?.reset();
           setState("done");
+          setProgress("");
           router.refresh();
         } catch (reason) {
           setState("error");
+          const status = Number(
+            (reason as { status?: number } | undefined)?.status ?? 0,
+          );
           setError(
-            reason instanceof Error ? reason.message : "Something went wrong.",
+            status === 409
+              ? "The frame already has 200 active slides."
+              : reason instanceof Error
+                ? reason.message
+                : "Something went wrong.",
           );
         }
       }}
@@ -114,7 +210,7 @@ export function UploadForm() {
       <p className={`form-status ${state}`} aria-live="polite">
         {state === "done"
           ? "Shared — it will appear on the frame shortly."
-          : error}
+          : error || progress}
       </p>
     </form>
   );
