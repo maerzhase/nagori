@@ -181,7 +181,7 @@ export default async function Home({
     upcoming: slides.filter((slide) => scheduleStatus(slide) === "upcoming"),
     expired: slides.filter((slide) => scheduleStatus(slide) === "expired"),
   };
-  const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "today";
+  const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "home";
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -241,7 +241,7 @@ export default async function Home({
         </header>
       }
       panels={{
-        today: (
+        home: (
           <>
             <section className="welcome">
               <div>
@@ -296,50 +296,86 @@ export default async function Home({
             {(grouped.upcoming.length > 0 || grouped.expired.length > 0) && (
               <div className="schedule-groups">
                 {grouped.upcoming.length > 0 && (
-                  <div>
+                  <section className="schedule-group">
                     <h3>Coming up</h3>
-                    {grouped.upcoming.map((slide) => (
-                      <div className="schedule-item" key={slide.id}>
-                        <strong>
-                          {slide.caption || slide.message?.slice(0, 45)}
-                        </strong>
-                        <span>Starts {formatDate(slide.displayFrom)}</span>
-                      </div>
-                    ))}
-                  </div>
+                    <div className="schedule-list">
+                      {grouped.upcoming.map((slide) => (
+                        <div className="schedule-item" key={slide.id}>
+                          <SlidePreview
+                            imageUrl={
+                              slide.kind === "photo"
+                                ? `/api/media/${encodeURIComponent(slide.id)}`
+                                : null
+                            }
+                            theme={slide.theme}
+                            message={slide.message}
+                            caption={slide.caption}
+                            fit={slide.fitMode ?? settings.fitMode}
+                            focalPoint={slide.focalPoint ?? settings.focalPoint}
+                            showCaption={settings.showCaptions}
+                          />
+                          <div className="schedule-meta">
+                            <strong>
+                              {slide.caption || slide.message?.slice(0, 45)}
+                            </strong>
+                            <span>Starts {formatDate(slide.displayFrom)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
                 {grouped.expired.length > 0 && (
-                  <div>
+                  <section className="schedule-group">
                     <h3>Ready to archive</h3>
-                    {grouped.expired.map((slide) => (
-                      <div className="schedule-item" key={slide.id}>
-                        <strong>
-                          {slide.caption || slide.message?.slice(0, 45)}
-                        </strong>
-                        <span>Ended {formatDate(slide.displayUntil)}</span>
-                        <form action={renewSlideAction}>
-                          <input
-                            type="hidden"
-                            name="slideId"
-                            value={slide.id}
+                    <div className="schedule-list">
+                      {grouped.expired.map((slide) => (
+                        <div className="schedule-item" key={slide.id}>
+                          <SlidePreview
+                            imageUrl={
+                              slide.kind === "photo"
+                                ? `/api/media/${encodeURIComponent(slide.id)}`
+                                : null
+                            }
+                            theme={slide.theme}
+                            message={slide.message}
+                            caption={slide.caption}
+                            fit={slide.fitMode ?? settings.fitMode}
+                            focalPoint={slide.focalPoint ?? settings.focalPoint}
+                            showCaption={settings.showCaptions}
                           />
-                          <Button size="sm" type="submit" variant="outline">
-                            Renew for {settings.defaultVisibilityDays} days
-                          </Button>
-                        </form>
-                        <form action={archiveSlideAction}>
-                          <input
-                            type="hidden"
-                            name="slideId"
-                            value={slide.id}
-                          />
-                          <Button size="sm" type="submit" variant="subtle">
-                            Archive
-                          </Button>
-                        </form>
-                      </div>
-                    ))}
-                  </div>
+                          <div className="schedule-meta">
+                            <strong>
+                              {slide.caption || slide.message?.slice(0, 45)}
+                            </strong>
+                            <span>Ended {formatDate(slide.displayUntil)}</span>
+                          </div>
+                          <div className="schedule-actions">
+                            <form action={renewSlideAction}>
+                              <input
+                                type="hidden"
+                                name="slideId"
+                                value={slide.id}
+                              />
+                              <Button size="sm" type="submit" variant="outline">
+                                Renew for {settings.defaultVisibilityDays} days
+                              </Button>
+                            </form>
+                            <form action={archiveSlideAction}>
+                              <input
+                                type="hidden"
+                                name="slideId"
+                                value={slide.id}
+                              />
+                              <Button size="sm" type="submit" variant="subtle">
+                                Archive
+                              </Button>
+                            </form>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
               </div>
             )}
