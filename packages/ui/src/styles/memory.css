@@ -1,8 +1,43 @@
 :root {
+  /* Surfaces. Every text colour below is specified against one of these. */
   --memory-paper: #f7f3ec;
+  --memory-card: #fffdf9;
+  --memory-cream: #eee5d8;
+  --memory-sidebar: #f0e9de;
+  --memory-night: #25231f;
+
+  /* Text. `ink` and `muted` are for light surfaces, `*-on-night` for dark. */
   --memory-ink: #29251f;
+  --memory-muted: #6b635a;
+  --memory-ink-on-night: #fffaf2;
+  --memory-muted-on-night: #918980;
+
+  /* Accents. `coral` and `garden` are decorative — backgrounds, borders, focus
+     rings, and display type only. Coral is 3.15:1 on paper, so body text uses
+     `accent-ink` on light surfaces and `accent-on-night` on dark ones. */
   --memory-coral: #d9684c;
   --memory-garden: #365d4b;
-  --memory-muted: #756d63;
+  --memory-accent-ink: #906552;
+  --memory-accent-on-night: #c98f74;
+
+  /* Interactive coral. Button labels are small and bold, and `--memory-coral`
+     only carries them at 3.48:1 — below AA. These two are the filled-button
+     surfaces, and they take `--memory-ink-on-night` as their label. */
+  --memory-coral-strong: #b94e36;
+  --memory-coral-strong-hover: #a63f2b;
+
+  /* Semantic pairs. Each foreground is only readable on its own surface —
+     never mix a foreground with a surface it is not paired with. */
+  --memory-danger: #803a29;
+  --memory-danger-surface: #f7e5df;
+  --memory-success: #2f6a4f;
+  --memory-success-surface: #e4efe6;
+  --memory-warning: #7a4a12;
+  --memory-warning-surface: #f7ecd9;
+
+  /* `line` divides filled areas and carries no meaning on its own. A control's
+     visual boundary does, so it gets its own darker token — WCAG 1.4.11 asks
+     for 3:1 there, and the old #cdc4b8 border was 1.7:1 against the field. */
   --memory-line: #ded6ca;
+  --memory-control-border: #948771;
 }

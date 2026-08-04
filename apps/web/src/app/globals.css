@@ -2,15 +2,17 @@
 @import "@nagori/ui/theme.css";
 @source "../../../../../packages/ui/src/**/*.{ts,tsx}";
 
+/* Local aliases onto the shared palette in @nagori/ui/memory.css. Do not
+   redeclare colour values here — tokens are contrast-checked at their source. */
 :root {
-  --paper: #f7f3ec;
-  --ink: #29251f;
-  --muted: #756d63;
-  --line: #ded6ca;
-  --coral: #d9684c;
-  --coral-dark: #b94e36;
-  --cream: #eee5d8;
-  --green: #365d4b;
+  --paper: var(--memory-paper);
+  --ink: var(--memory-ink);
+  --line: var(--memory-line);
+  --coral: var(--memory-coral);
+  --coral-dark: var(--memory-coral-strong);
+  --cream: var(--memory-cream);
+  --green: var(--memory-garden);
+  --accent-ink: var(--memory-accent-ink);
   color: var(--ink);
   background: var(--paper);
   font-family:
@@ -24,7 +26,6 @@ html {
   scroll-behavior: smooth;
 }
 html body {
-  --muted: var(--memory-muted);
   margin: 0;
   background: var(--paper);
   color: var(--ink);
@@ -48,11 +49,16 @@ button {
 }
 .eyebrow {
   margin: 0 0 0.65rem;
-  color: #9b6d58;
+  color: var(--accent-ink);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+/* The same eyebrow appears on the dark story panel, where the light-surface
+   accent drops to 3.11:1. One accent cannot serve both surfaces. */
+.auth-story .eyebrow {
+  color: var(--memory-accent-on-night);
 }
 .logo {
   display: grid;
@@ -61,8 +67,8 @@ button {
   height: 38px;
   place-items: center;
   border-radius: 50%;
-  background: var(--coral);
-  color: white;
+  background: var(--memory-coral-strong);
+  color: var(--memory-ink-on-night);
   font:
     600 21px Georgia,
     serif;
@@ -83,12 +89,12 @@ button {
     transform 0.2s;
 }
 .primary-button {
-  background: var(--coral);
-  color: white;
+  background: var(--memory-coral-strong);
+  color: var(--memory-ink-on-night);
   box-shadow: 0 8px 22px rgba(185, 78, 54, 0.15);
 }
 .primary-button:hover {
-  background: var(--coral-dark);
+  background: var(--memory-coral-strong-hover);
   transform: translateY(-1px);
 }
 .primary-button:disabled {
@@ -98,7 +104,7 @@ button {
 .secondary-button {
   border: 1px solid var(--ink);
   background: var(--ink);
-  color: white;
+  color: var(--memory-ink-on-night);
 }
 .auth-shell {
   display: grid;
@@ -111,8 +117,8 @@ button {
   flex-direction: column;
   justify-content: space-between;
   padding: clamp(2rem, 5vw, 5rem);
-  background: #25231f;
-  color: #fffaf2;
+  background: var(--memory-night);
+  color: var(--memory-ink-on-night);
 }
 .wordmark {
   display: flex;
@@ -139,19 +145,19 @@ button {
 }
 .auth-copy > p:last-child {
   max-width: 37rem;
-  color: #c9c0b5;
+  color: #c9c0b5; /* 8.73:1 on --memory-night */
   font-size: clamp(1rem, 1.6vw, 1.25rem);
   line-height: 1.65;
 }
 .auth-foot {
-  color: #867f76;
+  color: var(--memory-muted-on-night);
   font-size: 0.78rem;
 }
 .auth-panel {
   display: grid;
   place-items: center;
   padding: 3rem;
-  background: #f7f3ec;
+  background: var(--paper);
 }
 .auth-form-wrap {
   width: min(28rem, 100%);
@@ -163,7 +169,7 @@ button {
     serif;
 }
 .auth-form-wrap > p:not(.eyebrow, .auth-note) {
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.55;
 }
 .auth-form {
@@ -179,22 +185,29 @@ label {
   font-weight: 650;
 }
 label span {
-  color: #9b9389;
+  color: var(--muted-foreground);
   font-weight: 400;
 }
 input,
 textarea,
 select {
   width: 100%;
-  border: 1px solid #cdc4b8;
+  border: 1px solid var(--memory-control-border);
   border-radius: 7px;
   outline: 0;
-  background: #fffdf9;
+  background: var(--memory-card);
   color: var(--ink);
   padding: 0.75rem 0.8rem;
   transition:
     border 0.2s,
     box-shadow 0.2s;
+}
+/* Never leave placeholder text to the user agent: it is the one text colour a
+   browser picks for us, and it lands on a surface we set explicitly. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
 }
 input:focus,
 textarea:focus,
@@ -204,16 +217,16 @@ select:focus {
 }
 .auth-note {
   margin-top: 1.5rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.78rem;
   text-align: center;
 }
 .alert {
   margin: 1.2rem 0;
   border-left: 3px solid var(--coral);
-  background: #f7e5df;
+  background: var(--danger-surface);
   padding: 0.8rem 1rem;
-  color: #803a29;
+  color: var(--danger);
   font-size: 0.84rem;
   line-height: 1.5;
 }
@@ -228,7 +241,7 @@ select:focus {
   width: 236px;
   flex-direction: column;
   border-right: 1px solid var(--line);
-  background: #f0e9de;
+  background: var(--memory-sidebar);
   padding: 1.6rem 1.15rem;
 }
 .brand {
@@ -250,7 +263,7 @@ select:focus {
   gap: 0.8rem;
   border-radius: 7px;
   padding: 0.7rem 0.75rem;
-  color: #6d655b;
+  color: var(--muted-foreground);
   font-size: 0.86rem;
 }
 .sidebar nav a:hover,
@@ -269,6 +282,7 @@ select:focus {
   margin-left: auto;
   border-radius: 1rem;
   background: #ded4c6;
+  color: var(--ink);
   padding: 0.1rem 0.4rem;
   font-size: 0.68rem;
 }
@@ -288,7 +302,7 @@ select:focus {
   place-items: center;
   border-radius: 50%;
   background: var(--green);
-  color: white;
+  color: var(--memory-ink-on-night);
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -299,13 +313,13 @@ select:focus {
 }
 .sidebar-foot span {
   margin-top: 0.15rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   text-transform: capitalize;
 }
 .sidebar-foot button {
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .dashboard {
   min-height: 100vh;
@@ -332,7 +346,7 @@ select:focus {
 .topbar > div > span {
   display: block;
   margin-top: 0.18rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.67rem;
   font-weight: 400;
 }
@@ -379,11 +393,14 @@ select:focus {
 }
 .welcome > div > p:last-child {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.94rem;
 }
 .warning {
   margin: -1.5rem 0 2rem;
+  border-left-color: var(--warning);
+  background: var(--warning-surface);
+  color: var(--warning);
 }
 .pair-banner,
 .invite-banner {
@@ -491,7 +508,7 @@ select:focus {
 }
 .pane-title p {
   margin-top: 0.2rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.73rem;
 }
 .composer-form {
@@ -526,7 +543,7 @@ select:focus {
   font-size: 0.83rem;
 }
 .drop-field > span:last-of-type {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.67rem;
   font-weight: 400;
 }
@@ -571,11 +588,11 @@ textarea {
 .form-status {
   min-height: 1rem;
   margin: -0.25rem 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.72rem;
 }
 .form-status.error {
-  color: #a43c28;
+  color: var(--danger);
 }
 .form-status.done {
   color: var(--green);
@@ -592,7 +609,7 @@ textarea {
 }
 .section-heading > p {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.72rem;
 }
 .memory-grid {
@@ -649,7 +666,7 @@ textarea {
 }
 .memory-meta p {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.68rem;
 }
 .status {
@@ -659,15 +676,15 @@ textarea {
   text-transform: uppercase;
 }
 .status.active {
-  color: #397154;
+  color: var(--success);
 }
 .memory-meta form button,
 .text-button {
   border: 0;
-  border-bottom: 1px solid #a89d90;
+  border-bottom: 1px solid var(--memory-control-border);
   background: transparent;
   padding: 0.15rem 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.68rem;
 }
 .schedule-editor {
@@ -675,7 +692,7 @@ textarea {
   padding: 0.8rem 1rem 1rem;
 }
 .schedule-editor summary {
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 0.7rem;
 }
@@ -711,7 +728,7 @@ textarea {
 .empty-library p {
   max-width: 25rem;
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -752,7 +769,7 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   margin: 0.5rem 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.72rem;
 }
 .schedule-groups strong {
@@ -776,7 +793,7 @@ textarea {
 }
 .utility-section > p:not(.eyebrow) {
   max-width: 32rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.82rem;
   line-height: 1.55;
 }
@@ -827,11 +844,11 @@ textarea {
 }
 .member-list small {
   margin-top: 0.2rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.68rem;
 }
 .member-list em {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.67rem;
   font-style: normal;
   text-transform: capitalize;
@@ -852,7 +869,7 @@ textarea {
     serif;
 }
 .invite-form p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 0.7rem;
 }
 .device-list {
@@ -869,7 +886,7 @@ textarea {
   font-size: 0.75rem;
 }
 .device-list span {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .join-shell {
   display: grid;
@@ -893,13 +910,13 @@ textarea {
     serif;
 }
 .join-card > p:not(.eyebrow) {
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.55;
 }
 footer {
   border-top: 1px solid var(--line);
   padding: 1.5rem 0 0;
-  color: #999086;
+  color: var(--muted-foreground);
   font:
     400 0.68rem Georgia,
     serif;

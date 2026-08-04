@@ -17,6 +17,11 @@ const preview: Preview = {
     theme: "light",
   },
   parameters: {
+    // Report axe violations — including colour contrast — as errors rather than
+    // warnings, so a component cannot ship unreadable.
+    a11y: {
+      test: "error",
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
