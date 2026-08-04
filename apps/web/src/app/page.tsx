@@ -114,7 +114,10 @@ function AuthShell({
               <Input
                 name="password"
                 type="password"
-                minLength={12}
+                // Only when creating one. On sign-in the password already
+                // exists, so a minimum here just refuses to submit a password
+                // the server would have accepted.
+                minLength={setup ? 12 : undefined}
                 autoComplete={setup ? "new-password" : "current-password"}
                 required
               />

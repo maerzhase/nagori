@@ -10,10 +10,15 @@
 -- PBKDF2 parameters are implicit in the stored hash, so if they ever change that
 -- test fails rather than dev login quietly breaking.
 --
+-- The password is deliberately trivial and shorter than the app's own 12
+-- character minimum, which is fine here because the seed writes the hash
+-- directly rather than going through setup. It is the one credential nobody
+-- should have to remember, and it never leaves a local database.
+--
 -- SEED_EMAIL: owner@nagori.test
--- SEED_PASSWORD: nagori-dev-owner
+-- SEED_PASSWORD: password
 -- SEED_SALT: 0123456789abcdef0123456789abcdef
--- SEED_HASH: 6833eb1ef4a9495fae1f3a41a6e3c7da443951c9b0acbc814faf5ff1c74ec8e5
+-- SEED_HASH: db04bd021286d3e9d4685fde494b984ea16d998a4902065fabe25aacaac774ef
 
 DELETE FROM audit_events;
 DELETE FROM slides;
@@ -31,12 +36,12 @@ DELETE FROM request_limits;
 INSERT INTO users (id, email, name, password_hash, password_salt, created_at)
 VALUES
   ('usr_dev_owner', 'owner@nagori.test', 'Dev Owner',
-   '6833eb1ef4a9495fae1f3a41a6e3c7da443951c9b0acbc814faf5ff1c74ec8e5',
+   'db04bd021286d3e9d4685fde494b984ea16d998a4902065fabe25aacaac774ef',
    '0123456789abcdef0123456789abcdef',
    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   -- Same password, so you can sign in as a non-owner and see the reduced UI.
   ('usr_dev_editor', 'editor@nagori.test', 'Dev Editor',
-   '6833eb1ef4a9495fae1f3a41a6e3c7da443951c9b0acbc814faf5ff1c74ec8e5',
+   'db04bd021286d3e9d4685fde494b984ea16d998a4902065fabe25aacaac774ef',
    '0123456789abcdef0123456789abcdef',
    strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
 
