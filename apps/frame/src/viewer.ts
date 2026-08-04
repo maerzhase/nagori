@@ -137,24 +137,73 @@ async function refresh() {
   }
 }
 
+async function pair(body: { code?: string; token?: string }) {
+  const error = document.getElementById("pair-error") as HTMLElement;
+  error.textContent = "";
+  try {
+    const response = await fetch("/api/pair", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      error.textContent =
+        response.status === 429
+          ? "Too many attempts. Please wait a few minutes."
+          : "That code or link is invalid or has expired.";
+      return false;
+    }
+  } catch (_error) {
+    error.textContent = "No connection. Please try again.";
+    return false;
+  }
+  await refresh();
+  return true;
+}
+
 document
   .getElementById("pair-form")
   ?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const code = (document.getElementById("code") as HTMLInputElement).value;
-    const error = document.getElementById("pair-error") as HTMLElement;
-    error.textContent = "";
-    const response = await fetch("/api/pair", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ code }),
+    await pair({
+      code: (document.getElementById("code") as HTMLInputElement).value,
     });
-    if (!response.ok) {
-      error.textContent = "That code is invalid or has expired.";
-      return;
-    }
-    await refresh();
   });
+
+/**
+ * A connect link carries its token in the fragment, so the secret never reaches
+ * the server in a request line or a Referer header. Strip it once used, or a
+ * reload would retry a token that is already spent.
+ */
+function linkToken(): string {
+  const match = /(?:^|[#&])t=([^&]+)/.exec(window.location.hash);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+const pendingToken = linkToken();
+if (pendingToken) {
+  const connectButton = document.getElementById("pair-link") as HTMLElement;
+  const codeFields = document.getElementById("pair-code-fields") as HTMLElement;
+  if (connectButton && codeFields) {
+    codeFields.hidden = true;
+    // Hiding alone would leave a required control blocking validation.
+    (document.getElementById("code") as HTMLInputElement).disabled = true;
+    const hint = document.querySelector(".pairing .hint");
+    if (hint) hint.textContent = "Tap the button to connect this frame.";
+    connectButton.hidden = false;
+    connectButton.addEventListener("click", async () => {
+      if (await pair({ token: pendingToken })) {
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search,
+          );
+        }
+      }
+    });
+  }
+}
 
 manifest = loadSavedManifest();
 if (manifest) {

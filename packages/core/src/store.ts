@@ -45,6 +45,42 @@ export interface DeviceRow {
   lastSeenAt: string | null;
   createdAt: string;
   paired: number;
+  codeExpiresAt: string | null;
+  linkExpiresAt: string | null;
+}
+
+export interface PendingInvitationRow {
+  id: string;
+  email: string;
+  role: Role;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** Returned once, at creation or rotation. Only hashes are ever stored. */
+export interface PairingSecrets {
+  code: string;
+  codeExpiresAt: string;
+  linkToken: string;
+  linkExpiresAt: string;
+}
+
+/** Typed on the iPad, so it stays short — and therefore short-lived. */
+const CODE_TTL_MS = 15 * 60_000;
+/** Clicked, not typed, so it is 128-bit and can outlive the code by far. */
+const LINK_TTL_MS = 30 * 86400000;
+const INVITATION_TTL_MS = 7 * 86400000;
+
+function newPairingSecrets(): PairingSecrets {
+  const now = Date.now();
+  return {
+    code: String(
+      crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000,
+    ).padStart(6, "0"),
+    codeExpiresAt: new Date(now + CODE_TTL_MS).toISOString(),
+    linkToken: randomId("pair"),
+    linkExpiresAt: new Date(now + LINK_TTL_MS).toISOString(),
+  };
 }
 
 export class NagoriStore {
@@ -230,7 +266,7 @@ export class NagoriStore {
   }) {
     const token = randomId("invite");
     const now = new Date();
-    const expires = new Date(now.getTime() + 7 * 86400000);
+    const expires = new Date(now.getTime() + INVITATION_TTL_MS);
     await this.db
       .prepare(
         "INSERT INTO invitations (id, household_id, email, role, token_hash, expires_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -247,6 +283,91 @@ export class NagoriStore {
       )
       .run();
     return token;
+  }
+
+  /** Deliberately selects no token column: the plaintext is unrecoverable. */
+  async listPendingInvitations(
+    householdId: string,
+  ): Promise<PendingInvitationRow[]> {
+    const result = await this.db
+      .prepare(
+        `SELECT id, email, role, expires_at AS expiresAt, created_at AS createdAt
+         FROM invitations
+         WHERE household_id = ? AND accepted_at IS NULL
+         ORDER BY created_at DESC`,
+      )
+      .bind(householdId)
+      .all<PendingInvitationRow>();
+    return result.results ?? [];
+  }
+
+  /**
+   * Replaces a pending invitation's token and extends its window, returning the
+   * new plaintext once. This is how an invite gets re-sent: the original link
+   * cannot be shown again, only superseded.
+   */
+  async rotateInvitationToken(input: {
+    householdId: string;
+    userId: string;
+    invitationId: string;
+  }): Promise<{ token: string; email: string; expiresAt: string } | null> {
+    const invitation = await this.db
+      .prepare(
+        "SELECT id, email FROM invitations WHERE id = ? AND household_id = ? AND accepted_at IS NULL",
+      )
+      .bind(input.invitationId, input.householdId)
+      .first<{ id: string; email: string }>();
+    if (!invitation) return null;
+    const token = randomId("invite");
+    const now = new Date();
+    const expires = new Date(now.getTime() + INVITATION_TTL_MS);
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE invitations SET token_hash = ?, expires_at = ? WHERE id = ? AND household_id = ?",
+        )
+        .bind(
+          await sha256(token),
+          expires.toISOString(),
+          input.invitationId,
+          input.householdId,
+        ),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "invitation.rotated",
+        input.invitationId,
+        now,
+      ),
+    ]);
+    return {
+      token,
+      email: invitation.email,
+      expiresAt: expires.toISOString(),
+    };
+  }
+
+  async revokeInvitation(input: {
+    householdId: string;
+    userId: string;
+    invitationId: string;
+  }): Promise<boolean> {
+    const now = new Date();
+    const result = await this.db
+      .prepare(
+        "DELETE FROM invitations WHERE id = ? AND household_id = ? AND accepted_at IS NULL",
+      )
+      .bind(input.invitationId, input.householdId)
+      .run();
+    if (!result.success) return false;
+    await this.auditStatement(
+      input.householdId,
+      input.userId,
+      "invitation.revoked",
+      input.invitationId,
+      now,
+    ).run();
+    return true;
   }
 
   async getInvitation(token: string) {
@@ -608,32 +729,81 @@ export class NagoriStore {
     };
   }
 
-  async createPairingCode(householdId: string, name: string): Promise<string> {
-    const code = String(
-      crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000,
-    ).padStart(6, "0");
+  async createPairingCode(
+    householdId: string,
+    name: string,
+  ): Promise<PairingSecrets> {
+    const secrets = newPairingSecrets();
     const now = new Date();
-    const expires = new Date(now.getTime() + 15 * 60_000);
     await this.db
       .prepare(
-        "INSERT INTO devices (id, household_id, name, pairing_code_hash, pairing_expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO devices (id, household_id, name, pairing_code_hash, pairing_expires_at, pair_link_hash, pair_link_expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       )
       .bind(
         randomId("device"),
         householdId,
         name.trim() || "Nagori frame",
-        await sha256(code),
-        expires.toISOString(),
+        await sha256(secrets.code),
+        secrets.codeExpiresAt,
+        await sha256(secrets.linkToken),
+        secrets.linkExpiresAt,
         now.toISOString(),
       )
       .run();
-    return code;
+    return secrets;
+  }
+
+  /**
+   * Issues a new code and link for a device that was never paired, and voids
+   * the previous pair. Nothing can reveal the old secrets — only their hashes
+   * are stored — so re-sending an invite to a frame means replacing it.
+   */
+  async rotatePairingCode(input: {
+    householdId: string;
+    userId: string;
+    deviceId: string;
+  }): Promise<PairingSecrets | null> {
+    const device = await this.db
+      .prepare(
+        "SELECT id FROM devices WHERE id = ? AND household_id = ? AND token_hash IS NULL AND revoked_at IS NULL",
+      )
+      .bind(input.deviceId, input.householdId)
+      .first<{ id: string }>();
+    if (!device) return null;
+    const secrets = newPairingSecrets();
+    const now = new Date();
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE devices SET pairing_code_hash = ?, pairing_expires_at = ?, pair_link_hash = ?, pair_link_expires_at = ?, pairing_attempts = 0 WHERE id = ? AND household_id = ?",
+        )
+        .bind(
+          await sha256(secrets.code),
+          secrets.codeExpiresAt,
+          await sha256(secrets.linkToken),
+          secrets.linkExpiresAt,
+          input.deviceId,
+          input.householdId,
+        ),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "device.pairing_rotated",
+        input.deviceId,
+        now,
+      ),
+    ]);
+    return secrets;
   }
 
   async listDevices(householdId: string): Promise<DeviceRow[]> {
     const result = await this.db
       .prepare(
-        "SELECT id, name, last_seen_at AS lastSeenAt, created_at AS createdAt, CASE WHEN token_hash IS NULL THEN 0 ELSE 1 END AS paired FROM devices WHERE household_id = ? AND revoked_at IS NULL ORDER BY created_at DESC",
+        `SELECT id, name, last_seen_at AS lastSeenAt, created_at AS createdAt,
+           CASE WHEN token_hash IS NULL THEN 0 ELSE 1 END AS paired,
+           pairing_expires_at AS codeExpiresAt, pair_link_expires_at AS linkExpiresAt
+         FROM devices WHERE household_id = ? AND revoked_at IS NULL
+         ORDER BY created_at DESC`,
       )
       .bind(householdId)
       .all<DeviceRow>();
@@ -673,22 +843,47 @@ export class NagoriStore {
   async claimPairingCode(
     code: string,
   ): Promise<{ token: string; deviceId: string } | null> {
-    const codeHash = await sha256(code);
     const device = await this.db
       .prepare(
-        "SELECT id FROM devices WHERE pairing_code_hash = ? AND pairing_expires_at > ? AND revoked_at IS NULL",
+        `SELECT id FROM devices
+         WHERE pairing_code_hash = ? AND pairing_expires_at > ? AND revoked_at IS NULL`,
       )
-      .bind(codeHash, new Date().toISOString())
+      .bind(await sha256(code), new Date().toISOString())
       .first<{ id: string }>();
     if (!device) return null;
+    return this.completePairing(device.id);
+  }
+
+  /**
+   * The link path. A 128-bit token needs no attempt counter — it is not
+   * guessable in the first place — but it is still single-use, because a
+   * pairing secret belongs to exactly one device row.
+   */
+  async claimPairingLink(
+    token: string,
+  ): Promise<{ token: string; deviceId: string } | null> {
+    const device = await this.db
+      .prepare(
+        `SELECT id FROM devices
+         WHERE pair_link_hash = ? AND pair_link_expires_at > ? AND revoked_at IS NULL`,
+      )
+      .bind(await sha256(token), new Date().toISOString())
+      .first<{ id: string }>();
+    if (!device) return null;
+    return this.completePairing(device.id);
+  }
+
+  private async completePairing(deviceId: string) {
     const token = randomId("frame");
     await this.db
       .prepare(
-        "UPDATE devices SET token_hash = ?, pairing_code_hash = NULL, pairing_expires_at = NULL WHERE id = ?",
+        `UPDATE devices SET token_hash = ?, pairing_code_hash = NULL,
+           pairing_expires_at = NULL, pair_link_hash = NULL,
+           pair_link_expires_at = NULL WHERE id = ?`,
       )
-      .bind(await sha256(token), device.id)
+      .bind(await sha256(token), deviceId)
       .run();
-    return { token, deviceId: device.id };
+    return { token, deviceId };
   }
 
   async findDevice(
