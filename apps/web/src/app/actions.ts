@@ -170,6 +170,23 @@ export async function archiveSlideAction(formData: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * Called after a drag settles. It returns nothing and does not redirect: the
+ * list has already moved on screen, so a navigation would only make the page
+ * flicker back through the server's copy of the order.
+ */
+export async function moveSlideAction(slideId: string, toIndex: number) {
+  const user = await requireUser();
+  if (user.role === "viewer") return;
+  await getStore().moveSlideTo({
+    householdId: user.householdId,
+    userId: user.id,
+    slideId,
+    toIndex,
+  });
+  revalidatePath("/");
+}
+
 export async function updateSlideDisplayAction(formData: FormData) {
   const user = await requireUser();
   if (user.role === "viewer") redirect("/?error=permission");
@@ -248,20 +265,19 @@ export async function updateSettingsAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "owner") redirect("/?error=permission");
   const seconds = clampDisplaySeconds(Number(text(formData, "displaySeconds")));
-  const focalPointInput = text(formData, "focalPoint");
-  const focalPoint = isFocalPoint(focalPointInput) ? focalPointInput : "center";
   const visibilityDays = Number(text(formData, "defaultVisibilityDays"));
   const defaultVisibilityDays = [7, 30, 60, 90].includes(visibilityDays)
     ? visibilityDays
     : 30;
   await getEnv()
     .DB.prepare(
-      "UPDATE viewer_settings SET display_seconds = ?, fit_mode = ?, focal_point = ?, show_captions = ?, default_visibility_days = ? WHERE household_id = ?",
+      // Framing is not on this form — it is per photo, in the library — so it
+      // must not be written here. Binding absent fields would reset the
+      // inherited default every time playback settings were saved.
+      "UPDATE viewer_settings SET display_seconds = ?, show_captions = ?, default_visibility_days = ? WHERE household_id = ?",
     )
     .bind(
       seconds,
-      text(formData, "fitMode") === "cover" ? "cover" : "contain",
-      focalPoint,
       formData.get("showCaptions") ? 1 : 0,
       defaultVisibilityDays,
       user.householdId,

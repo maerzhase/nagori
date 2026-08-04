@@ -427,18 +427,18 @@ textarea {
   gap: 1rem;
   margin-top: 0.9rem;
 }
-.schedule-fields {
+/* Both groups are fieldsets, so the browser defaults need clearing. min-width:0
+   because a fieldset defaults to min-content and would refuse to shrink. */
+.schedule-fields,
+.settings-captions {
+  min-width: 0;
   margin: 0;
   border: 0;
   border-top: 1px solid var(--line);
   padding: 1rem 0 0;
 }
-/* A legend sits *on* the fieldset's border by default, leaving a stub of rule
-   beside the text. Full width pushes the border clear of it. */
-.schedule-fields legend {
-  float: left;
-  width: 100%;
-  padding: 0 0 0.6rem;
+.field-group-title {
+  margin: 0 0 0.6rem;
   color: #514b43;
   font-size: 0.78rem;
   font-weight: 650;
@@ -495,29 +495,47 @@ textarea {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.library-tools {
-  display: flex;
-  align-items: end;
-  gap: 1.4rem;
-}
-.library-sort {
-  min-width: 12rem;
-}
 .dialog-form {
   display: grid;
-  justify-items: start;
   gap: 0.9rem;
   border-top: 1px solid var(--line);
   padding-top: 1rem;
 }
-.settings-framing {
-  display: grid;
-  gap: 0.7rem;
+/* Fields fill the dialog; only the submit sizes to its label. */
+.dialog-form > button {
+  justify-self: start;
 }
 .memory-card {
   overflow: hidden;
   border: 1px solid var(--line);
-  background: #fffdf9;
+  border-radius: 12px;
+  background: var(--memory-card);
+}
+.memory-card.dragging {
+  z-index: 2;
+  border-color: var(--memory-control-border);
+  box-shadow: 0 14px 34px rgba(41, 37, 31, 0.18);
+}
+.memory-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.memory-grip {
+  cursor: grab;
+  touch-action: none;
+}
+.memory-grip:active {
+  cursor: grabbing;
+}
+.section-note {
+  max-width: 34rem;
+  margin: 0.5rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.settings-captions {
+  grid-column: 1 / -1;
 }
 .memory-meta {
   display: grid;

@@ -1,16 +1,7 @@
 "use client";
 
 import type { ViewerSettings } from "@nagori/core";
-import {
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  SegmentedControl,
-  Select,
-} from "@nagori/ui";
-import { useState } from "react";
-import { FOCAL_OPTIONS } from "./slide-card";
+import { Button, Checkbox, Field, Input, Select } from "@nagori/ui";
 import { useFormStatus } from "react-dom";
 import { updateSettingsAction } from "@/app/actions";
 
@@ -32,7 +23,6 @@ export function SettingsForm({
           defaultValue={settings.displaySeconds}
         />
       </Field>
-      <PhotoFraming settings={settings} />
       <Field label="Default lifetime">
         <Select
           name="defaultVisibilityDays"
@@ -45,42 +35,16 @@ export function SettingsForm({
           ]}
         />
       </Field>
-      <Checkbox name="showCaptions" defaultChecked={settings.showCaptions}>
-        Show captions
-      </Checkbox>
+      <fieldset aria-labelledby="captions-title" className="settings-captions">
+        <p className="field-group-title" id="captions-title">
+          Captions
+        </p>
+        <Checkbox name="showCaptions" defaultChecked={settings.showCaptions}>
+          Show the note written with each photo
+        </Checkbox>
+      </fieldset>
       <SaveButton saved={saved} />
     </form>
-  );
-}
-
-/**
- * Household defaults. Any slide can override these from the library, so the
- * copy says "by default".
- */
-function PhotoFraming({ settings }: { settings: ViewerSettings }) {
-  const [fit, setFit] = useState(settings.fitMode);
-  return (
-    <div className="settings-framing">
-      <SegmentedControl
-        name="fitMode"
-        legend="Photos, by default"
-        options={[
-          { value: "contain", label: "Whole photo" },
-          { value: "cover", label: "Fill the screen" },
-        ]}
-        value={fit}
-        onValueChange={(next) => setFit(next as typeof fit)}
-      />
-      {fit === "cover" ? (
-        <Field label="Keep this part in view">
-          <Select
-            name="focalPoint"
-            defaultValue={settings.focalPoint}
-            options={FOCAL_OPTIONS}
-          />
-        </Field>
-      ) : null}
-    </div>
   );
 }
 

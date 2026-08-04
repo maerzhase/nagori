@@ -1,7 +1,7 @@
 "use client";
 
 import { Field, Input, SegmentedControl } from "@nagori/ui";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 function dayValue(value: string | null | undefined) {
   return value ? value.slice(0, 10) : "";
@@ -28,13 +28,20 @@ export function ScheduleFields({
   const [mode, setMode] = useState<"until" | "forever">(
     forever ? "forever" : "until",
   );
+  // One per card in the library, so the heading's id cannot be a constant.
+  const titleId = useId();
   const today = new Date().toISOString().slice(0, 10);
   const defaultUntil = new Date(Date.now() + 30 * 86400000)
     .toISOString()
     .slice(0, 10);
   return (
-    <fieldset className="schedule-fields">
-      <legend>How long should it stay?</legend>
+    // A fieldset for the grouping, but named by a heading rather than a legend:
+    // a legend renders inside the fieldset's top border, and the tricks for
+    // keeping the rule clear of it break the flow of everything after it.
+    <fieldset aria-labelledby={titleId} className="schedule-fields">
+      <p className="field-group-title" id={titleId}>
+        How long should it stay?
+      </p>
       <div className="schedule-rows">
         <Field label="First shown">
           <Input

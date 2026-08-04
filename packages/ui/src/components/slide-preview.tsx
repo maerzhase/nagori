@@ -41,7 +41,7 @@ export function SlidePreview({
     <div
       data-theme={hasPhoto ? undefined : theme}
       className={cn(
-        "relative isolate grid aspect-4/3 w-full place-items-center overflow-hidden rounded-xl bg-paper text-ink",
+        "relative isolate grid aspect-4/3 w-full place-items-center overflow-hidden bg-paper text-ink",
         !hasPhoto &&
           "data-[theme=sunset]:bg-coral data-[theme=sunset]:text-on-strong",
         !hasPhoto &&
