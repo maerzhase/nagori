@@ -3,13 +3,11 @@ import { Button, Field, Input, SlidePreview } from "@nagori/ui";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { isSortKey, type SortKey, sortSlides } from "@/lib/sort";
 import { isTabKey, type TabKey } from "@/lib/tabs";
 import { InviteForm, PendingInvites } from "@/components/family-forms";
 import { CreateFrameForm, DeviceRows } from "@/components/frame-forms";
 import { MemoryForm } from "@/components/memory-form";
-import { LibrarySort } from "@/components/library-sort";
-import { SlideCard } from "@/components/slide-card";
+import { SortableLibrary } from "@/components/sortable-library";
 import { SettingsForm } from "@/components/settings-form";
 import {
   archiveSlideAction,
@@ -179,8 +177,6 @@ export default async function Home({
     expired: slides.filter((slide) => scheduleStatus(slide) === "expired"),
   };
   const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "today";
-  const sort: SortKey = isSortKey(params.sort) ? params.sort : "newest";
-  const sortedActive = sortSlides(grouped.active, sort);
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -268,11 +264,12 @@ export default async function Home({
               <div>
                 <p className="eyebrow">Current rotation</p>
                 <h2>What they’re seeing</h2>
+                <p className="section-note">
+                  This is the order the frame plays. Drag a card by its handle
+                  to change it.
+                </p>
               </div>
-              <div className="library-tools">
-                <p>{activeCount} of 200 active</p>
-                <LibrarySort value={sort} />
-              </div>
+              <p>{activeCount} of 200 active</p>
             </div>
             {rotationWarning}
             {grouped.active.length === 0 ? (
@@ -285,11 +282,11 @@ export default async function Home({
                 </p>
               </div>
             ) : (
-              <div className="memory-grid">
-                {sortedActive.map((slide) => (
-                  <SlideCard key={slide.id} settings={settings} slide={slide} />
-                ))}
-              </div>
+              <SortableLibrary
+                canReorder={user.role !== "viewer"}
+                settings={settings}
+                slides={grouped.active}
+              />
             )}
             {(grouped.upcoming.length > 0 || grouped.expired.length > 0) && (
               <div className="schedule-groups">

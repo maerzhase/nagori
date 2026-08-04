@@ -30,6 +30,7 @@ export interface SlideRow {
   displayFrom: string;
   displayUntil: string | null;
   createdAt: string;
+  position: number;
   mediaType: string | null;
   r2Key: string | null;
   fitMode: FitMode | null;
@@ -491,11 +492,11 @@ export class NagoriStore {
       SELECT s.id, s.kind, s.caption, s.message, s.theme, s.state,
              s.display_from AS displayFrom, s.display_until AS displayUntil,
              s.created_at AS createdAt, s.fit_mode AS fitMode,
-             s.focal_point AS focalPoint,
+             s.focal_point AS focalPoint, s.position,
              m.media_type AS mediaType, m.r2_key AS r2Key
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state != 'archived'
-      ORDER BY s.created_at DESC
+      ORDER BY s.position, s.created_at DESC
     `)
       .bind(householdId)
       .all<SlideRow>();
@@ -563,7 +564,11 @@ export class NagoriStore {
         ),
       this.db
         .prepare(
-          "INSERT INTO slides (id, household_id, kind, media_asset_id, caption, display_from, display_until, created_by, created_at, updated_at) VALUES (?, ?, 'photo', ?, ?, ?, ?, ?, ?, ?)",
+          `INSERT INTO slides (id, household_id, kind, media_asset_id, caption,
+             display_from, display_until, position, created_by, created_at, updated_at)
+           VALUES (?, ?, 'photo', ?, ?, ?, ?,
+             (SELECT COALESCE(MAX(position), -1) + 1 FROM slides WHERE household_id = ?),
+             ?, ?, ?)`,
         )
         .bind(
           slideId,
@@ -572,6 +577,7 @@ export class NagoriStore {
           input.caption?.trim() || null,
           displayFrom,
           displayUntil,
+          input.householdId,
           input.userId,
           now.toISOString(),
           now.toISOString(),
@@ -617,7 +623,11 @@ export class NagoriStore {
     await this.db.batch([
       this.db
         .prepare(
-          "INSERT INTO slides (id, household_id, kind, message, theme, display_from, display_until, created_by, created_at, updated_at) VALUES (?, ?, 'message', ?, ?, ?, ?, ?, ?, ?)",
+          `INSERT INTO slides (id, household_id, kind, message, theme,
+             display_from, display_until, position, created_by, created_at, updated_at)
+           VALUES (?, ?, 'message', ?, ?, ?, ?,
+             (SELECT COALESCE(MAX(position), -1) + 1 FROM slides WHERE household_id = ?),
+             ?, ?, ?)`,
         )
         .bind(
           slideId,
@@ -626,6 +636,7 @@ export class NagoriStore {
           input.theme ?? "paper",
           displayFrom,
           displayUntil,
+          input.householdId,
           input.userId,
           now.toISOString(),
           now.toISOString(),
@@ -640,6 +651,53 @@ export class NagoriStore {
       ),
     ]);
     return slideId;
+  }
+
+  /**
+   * Moves a slide to an absolute position in the household's order. Drag-and-drop
+   * produces a destination index, not a swap, so the whole run is renumbered from
+   * the resulting sequence — which also repairs any gaps or ties left behind by
+   * archiving.
+   */
+  async moveSlideTo(input: {
+    householdId: string;
+    userId: string;
+    slideId: string;
+    toIndex: number;
+  }): Promise<boolean> {
+    const result = await this.db
+      .prepare(
+        `SELECT id FROM slides
+         WHERE household_id = ? AND state != 'archived'
+         ORDER BY position, created_at DESC`,
+      )
+      .bind(input.householdId)
+      .all<{ id: string }>();
+    const ids = (result.results ?? []).map((row) => row.id);
+    const from = ids.indexOf(input.slideId);
+    if (from === -1) return false;
+    const to = Math.max(0, Math.min(ids.length - 1, Math.trunc(input.toIndex)));
+    if (to === from) return true;
+    ids.splice(to, 0, ...ids.splice(from, 1));
+    const now = new Date();
+    await this.db.batch([
+      ...ids.map((id, index) =>
+        this.db
+          .prepare(
+            "UPDATE slides SET position = ? WHERE id = ? AND household_id = ?",
+          )
+          .bind(index, id, input.householdId),
+      ),
+      this.bumpRevisionStatement(input.householdId),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "slide.reordered",
+        input.slideId,
+        now,
+      ),
+    ]);
+    return true;
   }
 
   async updateSlideDisplay(input: {
@@ -977,7 +1035,7 @@ export class NagoriStore {
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state = 'published' AND s.display_from <= ?
       AND (s.display_until IS NULL OR s.display_until > ?)
-      ORDER BY s.created_at DESC
+      ORDER BY s.position, s.created_at DESC
     `)
       .bind(householdId, now, now)
       .all<Omit<ViewerSlide, "mediaUrl"> & { r2Key: string | null }>();

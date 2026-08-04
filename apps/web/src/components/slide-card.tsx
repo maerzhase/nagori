@@ -11,6 +11,7 @@ import {
   Select,
   SlidePreview,
 } from "@nagori/ui";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import {
   archiveSlideAction,
@@ -26,6 +27,19 @@ function formatDate(value: string | null) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function GripIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="9" cy="6" r="1.5" />
+      <circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" />
+      <circle cx="15" cy="18" r="1.5" />
+    </svg>
+  );
 }
 
 function CloseIcon() {
@@ -51,9 +65,23 @@ function CloseIcon() {
 export function SlideCard({
   slide,
   settings,
+  index,
+  total,
+  ref,
+  style,
+  dragHandle,
+  dragging,
 }: {
   slide: SlideRow;
   settings: ViewerSettings;
+  /** Position in the rotation, 1-based, as the frame plays it. */
+  index: number;
+  total: number;
+  ref?: (node: HTMLElement | null) => void;
+  style?: CSSProperties;
+  /** Drag attributes and listeners, when the list is reorderable. */
+  dragHandle?: Record<string, unknown>;
+  dragging?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const imageUrl =
@@ -63,7 +91,11 @@ export function SlideCard({
   const label = slide.caption || slide.message?.slice(0, 60) || "Family memory";
 
   return (
-    <article className="memory-card">
+    <article
+      className={`memory-card${dragging ? " dragging" : ""}`}
+      ref={ref}
+      style={style}
+    >
       <button
         aria-label={`Edit “${label}”`}
         className="memory-open"
@@ -83,21 +115,37 @@ export function SlideCard({
       <div className="memory-meta">
         <div>
           <h3>{label}</h3>
-          <p>{formatDate(slide.displayUntil)}</p>
+          <p>
+            {index} of {total} · {formatDate(slide.displayUntil)}
+          </p>
         </div>
-        <form action={archiveSlideAction}>
-          <input type="hidden" name="slideId" value={slide.id} />
-          <ConfirmButton
-            label={`Archive ${label}`}
-            heading="Archive this memory?"
-            description="It leaves the frame straight away. Photos are removed from storage, so this cannot be undone."
-            confirmLabel="Archive it"
-            size="icon"
-            variant="outline"
-          >
-            <CloseIcon />
-          </ConfirmButton>
-        </form>
+        <div className="memory-actions">
+          {dragHandle ? (
+            <Button
+              {...dragHandle}
+              aria-label={`Reorder “${label}”`}
+              className="memory-grip"
+              size="icon"
+              type="button"
+              variant="subtle"
+            >
+              <GripIcon />
+            </Button>
+          ) : null}
+          <form action={archiveSlideAction}>
+            <input type="hidden" name="slideId" value={slide.id} />
+            <ConfirmButton
+              label={`Archive ${label}`}
+              heading="Archive this memory?"
+              description="It leaves the frame straight away. Photos are removed from storage, so this cannot be undone."
+              confirmLabel="Archive it"
+              size="icon"
+              variant="outline"
+            >
+              <CloseIcon />
+            </ConfirmButton>
+          </form>
+        </div>
       </div>
 
       <Dialog
@@ -111,7 +159,7 @@ export function SlideCard({
         }
       >
         <SlidePreview
-          className="max-w-56"
+          className="max-w-56 rounded-lg"
           imageUrl={imageUrl}
           theme={slide.theme}
           message={slide.message}
