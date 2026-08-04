@@ -12,6 +12,8 @@ export interface SlidePreviewProps {
   caption?: string | null;
   /** Matches the household's photo-fit setting. */
   fit?: "contain" | "cover";
+  /** Which part stays in view when the photo is cropped. */
+  focalPoint?: string;
   /** Stand-in text while the slide has no content yet. */
   placeholder?: string;
   showCaption?: boolean;
@@ -29,6 +31,7 @@ export function SlidePreview({
   message,
   caption,
   fit = "contain",
+  focalPoint = "center",
   placeholder = "Your note will appear here.",
   showCaption = true,
   className,
@@ -51,6 +54,7 @@ export function SlidePreview({
         <img
           src={imageUrl as string}
           alt=""
+          style={{ objectPosition: focalPoint }}
           className={cn(
             "size-full",
             fit === "cover" ? "object-cover" : "object-contain",

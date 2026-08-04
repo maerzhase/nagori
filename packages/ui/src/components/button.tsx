@@ -17,12 +17,16 @@ const buttonVariants = cva(
         secondary:
           "border-foreground bg-foreground text-on-strong hover:opacity-90",
         outline: "border-input bg-card text-foreground hover:bg-muted",
-        text: "rounded-none border-0 border-b border-b-input bg-transparent px-0 py-0.5 font-medium text-muted-foreground hover:text-foreground",
+        // Quiet, but still a shape you can aim at: transparent until hovered,
+        // where `outline` is too heavy to repeat in a row of table actions.
+        subtle:
+          "border-transparent bg-transparent text-muted-foreground hover:border-input hover:bg-card hover:text-foreground",
       },
       size: {
         default: "min-h-11 px-4 py-2.5 text-sm",
         sm: "min-h-9 px-3 py-1.5 text-xs",
         lg: "min-h-12 px-6 py-3 text-base",
+        icon: "size-9 p-0 text-sm [&>svg]:size-4",
       },
     },
     defaultVariants: {
