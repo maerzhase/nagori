@@ -48,7 +48,7 @@ export function InviteForm() {
   return (
     <div className="invite-form">
       <h3>Invite someone</h3>
-      <p>We create a private link for you to send.</p>
+      <p>We’ll make a private link for you to send.</p>
       <form action={action} className="grid gap-4">
         <Field label="Email">
           <Input

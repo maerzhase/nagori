@@ -46,18 +46,16 @@ function AuthShell({
           </span>
         </div>
         <div className="auth-copy">
-          <p className="eyebrow">A window into family life</p>
+          <p className="eyebrow">A quiet way to stay close</p>
           <h1>
             The photos that matter, <em>already there.</em>
           </h1>
           <p>
-            Share a moment from your phone. It quietly appears on the family
-            frame — no taps, passwords or instructions needed on the other side.
+            Share a moment from your phone, and it appears on the family frame
+            at home — no taps, passwords, or setup for the people watching.
           </p>
         </div>
-        <p className="auth-foot">
-          Designed for old iPads and the people we love.
-        </p>
+        <p className="auth-foot">Made for the people you love.</p>
       </section>
       <section className="auth-panel">
         <div className="auth-form-wrap">
@@ -186,8 +184,8 @@ export default async function Home({
 
   const rotationWarning = activeCount >= ACTIVE_SLIDE_WARNING && (
     <div className="alert warning">
-      The rotation has {activeCount} active slides. Archive a few or give them
-      an end date before it reaches the 200-slide limit.
+      There are {activeCount} memories on the frame. Archive a few, or give some
+      an end date, before you reach the limit of 200.
     </div>
   );
 
@@ -240,11 +238,11 @@ export default async function Home({
           <>
             <section className="welcome">
               <div>
-                <h1>Good day, {user.name.split(" ")[0]}.</h1>
+                <h1>Hello, {user.name.split(" ")[0]}.</h1>
                 <p>
                   {activeCount === 0
                     ? "The frame is ready for its first memory."
-                    : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} keeping the frame company.`}
+                    : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} playing on the frame right now.`}
                 </p>
               </div>
             </section>
@@ -252,7 +250,7 @@ export default async function Home({
             <section className="composer">
               <div className="section-intro">
                 <p className="eyebrow">Share something new</p>
-                <h2>A small moment makes their day.</h2>
+                <h2>What would you like to share?</h2>
               </div>
               <MemoryForm showCaptions={settings.showCaptions} />
             </section>
@@ -393,7 +391,7 @@ export default async function Home({
         settings: (
           <section className="utility-section">
             <p className="eyebrow">Playback</p>
-            <h2>Keep it comfortable</h2>
+            <h2>How the frame plays</h2>
             <p>These settings apply to every frame in your family space.</p>
             <SettingsForm
               settings={settings}

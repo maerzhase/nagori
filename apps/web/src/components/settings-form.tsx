@@ -23,7 +23,7 @@ export function SettingsForm({
           defaultValue={settings.displaySeconds}
         />
       </Field>
-      <Field label="Default lifetime">
+      <Field label="How long new memories stay">
         <Select
           name="defaultVisibilityDays"
           defaultValue={String(settings.defaultVisibilityDays)}
