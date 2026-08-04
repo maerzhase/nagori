@@ -109,7 +109,8 @@ export async function createMessageAction(formData: FormData) {
     defaultVisibilityDays: settings.defaultVisibilityDays,
   });
   revalidatePath("/");
-  redirect("/?created=message&tab=library");
+  // No redirect: the caller is the composer, which reports success in place
+  // next to its preview, exactly as the photo path does.
 }
 
 export async function rescheduleSlideAction(formData: FormData) {

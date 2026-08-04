@@ -174,13 +174,21 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
           setState("working");
           setError("");
           if (!isPhoto) {
-            // A themed note is a plain server action; nothing to stream.
+            // A themed note has nothing to stream, so it goes straight through
+            // the server action — but it reports success the same way.
             try {
               await createMessageAction(data);
+              formRef.current?.reset();
+              setText("");
+              setState("done");
+              router.refresh();
             } catch (reason) {
-              // redirect() throws by design; a real failure lands here too.
-              setState("idle");
-              throw reason;
+              setState("error");
+              setError(
+                reason instanceof Error
+                  ? reason.message
+                  : "Something went wrong.",
+              );
             }
             return;
           }
