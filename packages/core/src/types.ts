@@ -2,9 +2,31 @@ export type Role = "owner" | "editor" | "viewer";
 export type SlideKind = "photo" | "message";
 export type SlideState = "draft" | "published" | "archived";
 
+export type FitMode = "contain" | "cover";
+/** Which part of a photo survives a crop, as an `object-position` keyword. */
+export type FocalPoint = "center" | "top" | "bottom" | "left" | "right";
+
+export const FIT_MODES: readonly FitMode[] = ["contain", "cover"];
+export const FOCAL_POINTS: readonly FocalPoint[] = [
+  "center",
+  "top",
+  "bottom",
+  "left",
+  "right",
+];
+
+export function isFitMode(value: unknown): value is FitMode {
+  return FIT_MODES.includes(value as FitMode);
+}
+
+export function isFocalPoint(value: unknown): value is FocalPoint {
+  return FOCAL_POINTS.includes(value as FocalPoint);
+}
+
 export interface ViewerSettings {
   displaySeconds: number;
-  fitMode: "contain" | "cover";
+  fitMode: FitMode;
+  focalPoint: FocalPoint;
   showCaptions: boolean;
   defaultVisibilityDays: number;
 }
@@ -18,6 +40,9 @@ export interface ViewerSlide {
   mediaUrl: string | null;
   displayFrom: string;
   displayUntil: string | null;
+  /** null means "use the household setting". */
+  fitMode: FitMode | null;
+  focalPoint: FocalPoint | null;
 }
 
 export interface ViewerManifest {
