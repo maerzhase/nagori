@@ -18,7 +18,7 @@ export const TAB_LABELS: Record<TabKey, string> = {
   today: "Today",
   library: "Library",
   family: "Family",
-  frame: "Frame",
+  frame: "Frames",
   settings: "Settings",
 };
 

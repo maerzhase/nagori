@@ -2,9 +2,9 @@
 
 import {
   Button,
-  Checkbox,
   Field,
   Input,
+  SegmentedControl,
   Select,
   SlidePreview,
   Textarea,
@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createMessageAction } from "@/app/actions";
+import { ScheduleFields } from "./schedule-fields";
 
 const THEMES = [
   { value: "paper", label: "Warm paper" },
@@ -242,86 +243,75 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
           }
         }}
       >
-        <fieldset className="segmented">
-          <legend>Background</legend>
-          <label>
-            <input
-              type="radio"
-              name="background"
-              value="photo"
-              checked={isPhoto}
-              onChange={() => setBackground("photo")}
-            />
-            <span>A photo</span>
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="background"
-              value="theme"
-              checked={!isPhoto}
-              onChange={() => setBackground("theme")}
-            />
-            <span>A colour</span>
-          </label>
-        </fieldset>
+        <div className="memory-fields">
+          <SegmentedControl
+            name="background"
+            legend="Background"
+            options={[
+              { value: "photo", label: "A photo" },
+              { value: "theme", label: "A colour" },
+            ]}
+            value={background}
+            onValueChange={(next) => setBackground(next as "photo" | "theme")}
+          />
 
-        {isPhoto ? (
-          <label className="drop-field">
-            <span className="drop-icon">＋</span>
-            <strong>
-              {photoUrl ? "Choose another photo" : "Choose a photo"}
-            </strong>
-            <span>
-              HEIC, JPEG or PNG · prepared for the frame automatically
-            </span>
-            <input
-              name="photo"
-              type="file"
-              accept="image/*"
-              required
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                setPhotoUrl((previous) => {
-                  if (previous) URL.revokeObjectURL(previous);
-                  return file ? URL.createObjectURL(file) : null;
-                });
-              }}
-            />
-          </label>
-        ) : (
-          <Field label="Colour">
-            <Select
-              name="theme"
-              defaultValue={theme}
-              onValueChange={setTheme}
-              options={THEMES}
-            />
-          </Field>
-        )}
+          {isPhoto ? (
+            <label className="drop-field">
+              <span className="drop-icon">＋</span>
+              <strong>
+                {photoUrl ? "Choose another photo" : "Choose a photo"}
+              </strong>
+              <span>
+                HEIC, JPEG or PNG · prepared for the frame automatically
+              </span>
+              <input
+                name="photo"
+                type="file"
+                accept="image/*"
+                required
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  setPhotoUrl((previous) => {
+                    if (previous) URL.revokeObjectURL(previous);
+                    return file ? URL.createObjectURL(file) : null;
+                  });
+                }}
+              />
+            </label>
+          ) : (
+            <Field label="Colour">
+              <Select
+                name="theme"
+                defaultValue={theme}
+                onValueChange={setTheme}
+                options={THEMES}
+              />
+            </Field>
+          )}
 
-        {isPhoto ? (
-          <Field label="Little note" hint="optional">
-            <Input
-              name="caption"
-              maxLength={180}
-              placeholder="Sunday lunch at the old house"
-              value={text}
-              onChange={(event) => setText(event.currentTarget.value)}
-            />
-          </Field>
-        ) : (
-          <Field label="Message">
-            <Textarea
-              name="message"
-              maxLength={280}
-              placeholder="Thinking of you both today…"
-              required
-              value={text}
-              onChange={(event) => setText(event.currentTarget.value)}
-            />
-          </Field>
-        )}
+          {isPhoto ? (
+            <Field label="Little note" hint="optional">
+              <Input
+                name="caption"
+                maxLength={180}
+                placeholder="Sunday lunch at the old house"
+                value={text}
+                onChange={(event) => setText(event.currentTarget.value)}
+              />
+            </Field>
+          ) : (
+            <Field label="Message">
+              <Textarea
+                name="message"
+                maxLength={280}
+                placeholder="Thinking of you both today…"
+                required
+                value={text}
+                onChange={(event) => setText(event.currentTarget.value)}
+              />
+            </Field>
+          )}
+        </div>
 
         <ScheduleFields />
         <Button disabled={state === "working"} type="submit">
@@ -356,26 +346,5 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
         </p>
       </div>
     </div>
-  );
-}
-
-export function ScheduleFields() {
-  const today = new Date().toISOString().slice(0, 10);
-  const later = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  return (
-    <fieldset className="schedule-fields">
-      <legend>When should it show?</legend>
-      <div className="date-grid">
-        <Field label="From">
-          <Input name="displayFrom" type="date" defaultValue={today} />
-        </Field>
-        <Field label="Until">
-          <Input name="displayUntil" type="date" defaultValue={later} />
-        </Field>
-      </div>
-      <Checkbox name="forever" value="yes">
-        Keep in the rotation forever
-      </Checkbox>
-    </fieldset>
   );
 }

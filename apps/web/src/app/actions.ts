@@ -5,6 +5,8 @@ import {
   defaultSchedule,
   hashPassword,
   isStrongEnoughPassword,
+  isFitMode,
+  isFocalPoint,
   normalizeEmail,
   type PairingSecrets,
 } from "@nagori/core";
@@ -168,6 +170,23 @@ export async function archiveSlideAction(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function updateSlideDisplayAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role === "viewer") redirect("/?error=permission");
+  const fit = text(formData, "fitMode");
+  const focal = text(formData, "focalPoint");
+  await getStore().updateSlideDisplay({
+    householdId: user.householdId,
+    userId: user.id,
+    slideId: text(formData, "slideId"),
+    // "inherit" is the absence of an override, not a value.
+    fitMode: isFitMode(fit) ? fit : null,
+    focalPoint: isFocalPoint(focal) ? focal : null,
+  });
+  revalidatePath("/");
+  redirect("/?saved=display&tab=library");
+}
+
 /**
  * Returns the secrets instead of redirecting with them in a query param, so a
  * pairing code never lands in browser history or a Worker access log.
@@ -229,17 +248,20 @@ export async function updateSettingsAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "owner") redirect("/?error=permission");
   const seconds = clampDisplaySeconds(Number(text(formData, "displaySeconds")));
+  const focalPointInput = text(formData, "focalPoint");
+  const focalPoint = isFocalPoint(focalPointInput) ? focalPointInput : "center";
   const visibilityDays = Number(text(formData, "defaultVisibilityDays"));
   const defaultVisibilityDays = [7, 30, 60, 90].includes(visibilityDays)
     ? visibilityDays
     : 30;
   await getEnv()
     .DB.prepare(
-      "UPDATE viewer_settings SET display_seconds = ?, fit_mode = ?, show_captions = ?, default_visibility_days = ? WHERE household_id = ?",
+      "UPDATE viewer_settings SET display_seconds = ?, fit_mode = ?, focal_point = ?, show_captions = ?, default_visibility_days = ? WHERE household_id = ?",
     )
     .bind(
       seconds,
       text(formData, "fitMode") === "cover" ? "cover" : "contain",
+      focalPoint,
       formData.get("showCaptions") ? 1 : 0,
       defaultVisibilityDays,
       user.householdId,

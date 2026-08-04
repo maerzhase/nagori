@@ -118,14 +118,14 @@ function PendingInviteRow({
             re-sending an invite means replacing the token. */}
         <form action={action}>
           <input type="hidden" name="invitationId" value={invitation.id} />
-          <Button disabled={pending} size="sm" type="submit" variant="text">
+          <Button disabled={pending} size="sm" type="submit" variant="outline">
             {pending ? "Creating…" : "New link"}
           </Button>
         </form>
         <form action={revokeInvitationAction}>
           <input type="hidden" name="invitationId" value={invitation.id} />
-          <Button size="sm" type="submit" variant="text">
-            Withdraw
+          <Button size="sm" type="submit" variant="subtle">
+            Cancel invite
           </Button>
         </form>
       </div>

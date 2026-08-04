@@ -117,7 +117,12 @@ function DeviceRowItem({
           <form action={action}>
             <input type="hidden" name="deviceId" value={device.id} />
             <input type="hidden" name="name" value={device.name} />
-            <Button disabled={pending} size="sm" type="submit" variant="text">
+            <Button
+              disabled={pending}
+              size="sm"
+              type="submit"
+              variant="outline"
+            >
               {pending ? "Creating…" : "New link"}
             </Button>
           </form>
@@ -125,8 +130,8 @@ function DeviceRowItem({
         {isOwner ? (
           <form action={revokeDeviceAction}>
             <input type="hidden" name="deviceId" value={device.id} />
-            <Button size="sm" type="submit" variant="text">
-              {waiting ? "Cancel" : "Revoke"}
+            <Button size="sm" type="submit" variant="subtle">
+              {waiting ? "Cancel" : "Disconnect"}
             </Button>
           </form>
         ) : null}

@@ -1,12 +1,15 @@
 import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@nagori/core";
-import { Button, Checkbox, Field, Input, SlidePreview } from "@nagori/ui";
+import { Button, Field, Input, SlidePreview } from "@nagori/ui";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { isSortKey, type SortKey, sortSlides } from "@/lib/sort";
 import { isTabKey, type TabKey } from "@/lib/tabs";
 import { InviteForm, PendingInvites } from "@/components/family-forms";
 import { CreateFrameForm, DeviceRows } from "@/components/frame-forms";
 import { MemoryForm } from "@/components/memory-form";
+import { LibrarySort } from "@/components/library-sort";
+import { SlideCard } from "@/components/slide-card";
 import { SettingsForm } from "@/components/settings-form";
 import {
   archiveSlideAction,
@@ -137,10 +140,6 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function dateInputValue(value: string | null) {
-  return value ? value.slice(0, 10) : "";
-}
-
 export default async function Home({
   searchParams,
 }: {
@@ -180,6 +179,8 @@ export default async function Home({
     expired: slides.filter((slide) => scheduleStatus(slide) === "expired"),
   };
   const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "today";
+  const sort: SortKey = isSortKey(params.sort) ? params.sort : "newest";
+  const sortedActive = sortSlides(grouped.active, sort);
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -208,15 +209,17 @@ export default async function Home({
       }
       account={
         <div className="sidebar-foot">
-          <div className="avatar">{initials}</div>
-          <div>
-            <strong>{user.name}</strong>
-            <span>{user.role}</span>
+          <div className="sidebar-identity">
+            <div className="avatar">{initials}</div>
+            <div>
+              <strong>{user.name}</strong>
+              <span>{user.role}</span>
+            </div>
           </div>
           <form action={logoutAction}>
-            <button title="Sign out" type="submit">
-              ↗
-            </button>
+            <Button size="sm" type="submit" variant="subtle">
+              Sign out
+            </Button>
           </form>
         </div>
       }
@@ -266,7 +269,10 @@ export default async function Home({
                 <p className="eyebrow">Current rotation</p>
                 <h2>What they’re seeing</h2>
               </div>
-              <p>{activeCount} of 200 active</p>
+              <div className="library-tools">
+                <p>{activeCount} of 200 active</p>
+                <LibrarySort value={sort} />
+              </div>
             </div>
             {rotationWarning}
             {grouped.active.length === 0 ? (
@@ -280,68 +286,8 @@ export default async function Home({
               </div>
             ) : (
               <div className="memory-grid">
-                {grouped.active.map((slide) => (
-                  <article className="memory-card" key={slide.id}>
-                    <SlidePreview
-                      imageUrl={
-                        slide.kind === "photo"
-                          ? `/api/media/${encodeURIComponent(slide.id)}`
-                          : null
-                      }
-                      theme={slide.theme}
-                      message={slide.message}
-                      caption={slide.caption}
-                      fit={settings.fitMode}
-                      showCaption={settings.showCaptions}
-                    />
-                    <div className="memory-meta">
-                      <div>
-                        <span className="status active">Showing now</span>
-                        <h3>
-                          {slide.caption ||
-                            (slide.kind === "message"
-                              ? "Family note"
-                              : "Untitled memory")}
-                        </h3>
-                        <p>Until {formatDate(slide.displayUntil)}</p>
-                      </div>
-                      <form action={archiveSlideAction}>
-                        <input type="hidden" name="slideId" value={slide.id} />
-                        <Button size="sm" type="submit" variant="text">
-                          Archive
-                        </Button>
-                      </form>
-                    </div>
-                    <details className="schedule-editor">
-                      <summary>Change schedule</summary>
-                      <form action={rescheduleSlideAction}>
-                        <input type="hidden" name="slideId" value={slide.id} />
-                        <div className="date-grid">
-                          <Field label="From">
-                            <Input
-                              name="displayFrom"
-                              type="date"
-                              defaultValue={dateInputValue(slide.displayFrom)}
-                              required
-                            />
-                          </Field>
-                          <Field label="Until">
-                            <Input
-                              name="displayUntil"
-                              type="date"
-                              defaultValue={dateInputValue(slide.displayUntil)}
-                            />
-                          </Field>
-                        </div>
-                        <Checkbox name="forever" value="yes">
-                          Keep in rotation forever
-                        </Checkbox>
-                        <Button size="sm" type="submit" variant="text">
-                          Save schedule
-                        </Button>
-                      </form>
-                    </details>
-                  </article>
+                {sortedActive.map((slide) => (
+                  <SlideCard key={slide.id} settings={settings} slide={slide} />
                 ))}
               </div>
             )}
@@ -375,7 +321,7 @@ export default async function Home({
                             name="slideId"
                             value={slide.id}
                           />
-                          <Button size="sm" type="submit" variant="text">
+                          <Button size="sm" type="submit" variant="outline">
                             Renew for {settings.defaultVisibilityDays} days
                           </Button>
                         </form>
@@ -385,7 +331,7 @@ export default async function Home({
                             name="slideId"
                             value={slide.id}
                           />
-                          <Button size="sm" type="submit" variant="text">
+                          <Button size="sm" type="submit" variant="subtle">
                             Archive
                           </Button>
                         </form>
