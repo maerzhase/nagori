@@ -2,6 +2,16 @@
 @import "@nagori/ui/theme.css";
 @source "../public/index.html";
 
+/*
+ * Tailwind's own [hidden] reset lives in @layer base behind a :where()
+ * selector; iOS 12 understands neither, so without this plain rule every
+ * section's display:flex wins over the hidden attribute and the pairing
+ * screen paints on top of the running slideshow.
+ */
+[hidden] {
+  display: none !important;
+}
+
 :root {
   color-scheme: dark;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
