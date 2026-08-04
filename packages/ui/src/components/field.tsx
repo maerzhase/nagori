@@ -6,7 +6,7 @@ import type { ComponentPropsWithoutRef, JSX, ReactNode } from "react";
 import { cn } from "../lib/cn";
 
 const labelClass =
-  "grid gap-1.5 text-xs font-semibold text-foreground [&>span]:font-normal [&>span]:text-muted-foreground";
+  "flex flex-wrap items-baseline gap-x-1.5 text-xs font-semibold text-foreground [&>span]:font-normal [&>span]:text-muted-foreground";
 
 /** Border is `--input`, not `--border`: a control's edge has to clear 3:1. */
 const controlClass =
@@ -34,7 +34,7 @@ export function Field({
     <BaseField.Root {...props} className={cn("grid gap-1.5", className)}>
       <BaseField.Label className={labelClass}>
         {label}
-        {hint ? <span>{hint}</span> : null}
+        {hint ? <span>({hint})</span> : null}
       </BaseField.Label>
       {children}
       {error ? (

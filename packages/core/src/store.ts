@@ -7,6 +7,8 @@ import {
 import { randomId, sha256 } from "./security";
 import type {
   Database,
+  FitMode,
+  FocalPoint,
   Role,
   SessionUser,
   ViewerManifest,
@@ -30,6 +32,8 @@ export interface SlideRow {
   createdAt: string;
   mediaType: string | null;
   r2Key: string | null;
+  fitMode: FitMode | null;
+  focalPoint: FocalPoint | null;
 }
 
 export interface MemberRow {
@@ -486,7 +490,9 @@ export class NagoriStore {
       .prepare(`
       SELECT s.id, s.kind, s.caption, s.message, s.theme, s.state,
              s.display_from AS displayFrom, s.display_until AS displayUntil,
-             s.created_at AS createdAt, m.media_type AS mediaType, m.r2_key AS r2Key
+             s.created_at AS createdAt, s.fit_mode AS fitMode,
+             s.focal_point AS focalPoint,
+             m.media_type AS mediaType, m.r2_key AS r2Key
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state != 'archived'
       ORDER BY s.created_at DESC
@@ -636,6 +642,44 @@ export class NagoriStore {
     return slideId;
   }
 
+  async updateSlideDisplay(input: {
+    householdId: string;
+    userId: string;
+    slideId: string;
+    fitMode: FitMode | null;
+    focalPoint: FocalPoint | null;
+  }): Promise<boolean> {
+    const now = new Date();
+    const slide = await this.db
+      .prepare(
+        "SELECT id FROM slides WHERE id = ? AND household_id = ? AND state != 'archived'",
+      )
+      .bind(input.slideId, input.householdId)
+      .first<{ id: string }>();
+    if (!slide) return false;
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE slides SET fit_mode = ?, focal_point = ? WHERE id = ? AND household_id = ?",
+        )
+        .bind(
+          input.fitMode,
+          input.focalPoint,
+          input.slideId,
+          input.householdId,
+        ),
+      this.bumpRevisionStatement(input.householdId),
+      this.auditStatement(
+        input.householdId,
+        input.userId,
+        "slide.display_updated",
+        input.slideId,
+        now,
+      ),
+    ]);
+    return true;
+  }
+
   async archiveSlide(
     householdId: string,
     userId: string,
@@ -712,18 +756,23 @@ export class NagoriStore {
   async getSettings(householdId: string): Promise<ViewerSettings> {
     const row = await this.db
       .prepare(
-        "SELECT display_seconds AS displaySeconds, fit_mode AS fitMode, show_captions AS showCaptions, default_visibility_days AS defaultVisibilityDays FROM viewer_settings WHERE household_id = ?",
+        `SELECT display_seconds AS displaySeconds, fit_mode AS fitMode,
+           focal_point AS focalPoint, show_captions AS showCaptions,
+           default_visibility_days AS defaultVisibilityDays
+         FROM viewer_settings WHERE household_id = ?`,
       )
       .bind(householdId)
       .first<{
         displaySeconds: number;
-        fitMode: "contain" | "cover";
+        fitMode: FitMode;
+        focalPoint: FocalPoint;
         showCaptions: number;
         defaultVisibilityDays: number;
       }>();
     return {
       displaySeconds: row?.displaySeconds ?? 12,
       fitMode: row?.fitMode ?? "contain",
+      focalPoint: row?.focalPoint ?? "center",
       showCaptions: Boolean(row?.showCaptions ?? 1),
       defaultVisibilityDays: row?.defaultVisibilityDays ?? 30,
     };
@@ -923,6 +972,7 @@ export class NagoriStore {
       .prepare(`
       SELECT s.id, s.kind, s.caption, s.message, s.theme,
              s.display_from AS displayFrom, s.display_until AS displayUntil,
+             s.fit_mode AS fitMode, s.focal_point AS focalPoint,
              m.r2_key AS r2Key
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state = 'published' AND s.display_from <= ?

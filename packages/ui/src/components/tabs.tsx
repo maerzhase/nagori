@@ -17,8 +17,12 @@ export interface TabsListProps
 
 /**
  * The indicator is positioned from the CSS variables Base UI writes onto it
- * (`--active-tab-top/left/width/height`), so the movement between tabs is a
- * transform transition rather than a class swap.
+ * (`--active-tab-top/left/width/height`), so moving between tabs is a transform
+ * transition rather than a class swap.
+ *
+ * It is a plain filled surface. The selected tab is already carried by weight
+ * and text colour, so the fill only has to say "this row", and an accent rule
+ * pinned to one edge was decoration doing a job the type already did.
  */
 export function TabsList({
   children,
@@ -26,13 +30,10 @@ export function TabsList({
   ...props
 }: TabsListProps): JSX.Element {
   return (
-    <BaseTabs.List
-      {...props}
-      className={cn("relative grid gap-0.5", className)}
-    >
+    <BaseTabs.List {...props} className={cn("relative grid gap-px", className)}>
       <BaseTabs.Indicator
         renderBeforeHydration
-        className="pointer-events-none absolute top-0 left-0 z-0 h-[var(--active-tab-height)] w-[var(--active-tab-width)] translate-x-[var(--active-tab-left)] translate-y-[var(--active-tab-top)] rounded-lg bg-card shadow-[inset_3px_0_var(--color-coral)] transition-[translate,width,height] duration-250 ease-out motion-reduce:transition-none"
+        className="pointer-events-none absolute top-0 left-0 z-0 h-[var(--active-tab-height)] w-[var(--active-tab-width)] translate-x-[var(--active-tab-left)] translate-y-[var(--active-tab-top)] rounded-md bg-card transition-[translate,width,height] duration-200 ease-out motion-reduce:transition-none"
       />
       {children}
     </BaseTabs.List>
@@ -46,7 +47,7 @@ export function Tab({ className, ...props }: TabProps): JSX.Element {
     <BaseTabs.Tab
       {...props}
       className={cn(
-        "relative z-1 flex cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors select-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 data-selected:font-semibold data-selected:text-foreground [&>svg]:size-5",
+        "relative z-1 flex cursor-pointer items-center gap-2.5 rounded-md border-0 bg-transparent px-2.5 py-2 text-left text-sm text-muted-foreground transition-colors select-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 data-selected:font-semibold data-selected:text-foreground [&>svg]:size-[18px]",
         className,
       )}
     />

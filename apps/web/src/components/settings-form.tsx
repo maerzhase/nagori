@@ -1,7 +1,16 @@
 "use client";
 
 import type { ViewerSettings } from "@nagori/core";
-import { Button, Checkbox, Field, Input, Select } from "@nagori/ui";
+import {
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  SegmentedControl,
+  Select,
+} from "@nagori/ui";
+import { useState } from "react";
+import { FOCAL_OPTIONS } from "./slide-card";
 import { useFormStatus } from "react-dom";
 import { updateSettingsAction } from "@/app/actions";
 
@@ -23,16 +32,7 @@ export function SettingsForm({
           defaultValue={settings.displaySeconds}
         />
       </Field>
-      <Field label="Photo fit">
-        <Select
-          name="fitMode"
-          defaultValue={settings.fitMode}
-          options={[
-            { value: "contain", label: "Show whole photo" },
-            { value: "cover", label: "Fill the screen" },
-          ]}
-        />
-      </Field>
+      <PhotoFraming settings={settings} />
       <Field label="Default lifetime">
         <Select
           name="defaultVisibilityDays"
@@ -50,6 +50,37 @@ export function SettingsForm({
       </Checkbox>
       <SaveButton saved={saved} />
     </form>
+  );
+}
+
+/**
+ * Household defaults. Any slide can override these from the library, so the
+ * copy says "by default".
+ */
+function PhotoFraming({ settings }: { settings: ViewerSettings }) {
+  const [fit, setFit] = useState(settings.fitMode);
+  return (
+    <div className="settings-framing">
+      <SegmentedControl
+        name="fitMode"
+        legend="Photos, by default"
+        options={[
+          { value: "contain", label: "Whole photo" },
+          { value: "cover", label: "Fill the screen" },
+        ]}
+        value={fit}
+        onValueChange={(next) => setFit(next as typeof fit)}
+      />
+      {fit === "cover" ? (
+        <Field label="Keep this part in view">
+          <Select
+            name="focalPoint"
+            defaultValue={settings.focalPoint}
+            options={FOCAL_OPTIONS}
+          />
+        </Field>
+      ) : null}
+    </div>
   );
 }
 

@@ -5,6 +5,9 @@ interface Slide {
   message: string | null;
   theme: string;
   mediaUrl: string | null;
+  /** null means "use the household setting". */
+  fitMode: "contain" | "cover" | null;
+  focalPoint: string | null;
 }
 
 interface Manifest {
@@ -12,6 +15,7 @@ interface Manifest {
   settings: {
     displaySeconds: number;
     fitMode: "contain" | "cover";
+    focalPoint: string;
     showCaptions: boolean;
   };
   slides: Slide[];
@@ -56,7 +60,10 @@ function renderCurrent() {
   } else {
     message.hidden = true;
     const nextImage = images[1 - activeImage];
-    nextImage.style.objectFit = manifest.settings.fitMode;
+    // A slide's own choice wins; the household setting is the fallback.
+    nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
+    nextImage.style.objectPosition =
+      item.focalPoint || manifest.settings.focalPoint || "center";
     nextImage.src = item.mediaUrl || "";
     nextImage.onload = () => {
       images[activeImage].className = "photo";
