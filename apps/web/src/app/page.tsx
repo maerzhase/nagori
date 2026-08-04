@@ -22,9 +22,16 @@ export const dynamic = "force-dynamic";
 
 function Logo() {
   return (
-    <span className="logo" aria-hidden="true">
-      M
-    </span>
+    // Plain <img>: the file is a fixed-size static asset in /public, so the
+    // Next image loader would only add a request for the same bytes.
+    <img
+      className="logo"
+      src="/logo.png"
+      alt=""
+      width={38}
+      height={38}
+      aria-hidden="true"
+    />
   );
 }
 

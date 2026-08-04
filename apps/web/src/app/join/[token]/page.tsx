@@ -17,7 +17,14 @@ export default async function JoinPage({
   return (
     <main className="join-shell">
       <div className="join-card">
-        <span className="logo">M</span>
+        <img
+          className="logo"
+          src="/logo.png"
+          alt=""
+          width={38}
+          height={38}
+          aria-hidden="true"
+        />
         {invitation ? (
           <>
             <p className="eyebrow">Family invitation</p>
