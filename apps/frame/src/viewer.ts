@@ -108,7 +108,8 @@ function warmPhotos(value: Manifest) {
   }
 }
 
-async function refresh() {
+/** Resolves false when this frame has no usable device session. */
+async function refresh(): Promise<boolean> {
   try {
     const headers: Record<string, string> = {};
     if (manifest) headers["if-none-match"] = `W/"${manifest.revision}"`;
@@ -118,29 +119,39 @@ async function refresh() {
       headers,
     });
     if (response.status === 401) {
+      // Drop any pending advance, or the previous slideshow would paint itself
+      // back over the pairing screen a few seconds later.
+      window.clearTimeout(timer);
       showOnly(pairing);
-      return;
+      return false;
     }
     if (response.status === 304) {
       connection.hidden = true;
-      return;
+      // The saved manifest is current. That is not the same as it being on
+      // screen: after a fresh pair the pairing screen is still up.
+      if (manifest && !pairing.hidden) renderCurrent();
+      return true;
     }
     if (!response.ok) throw new Error("manifest unavailable");
     const next = (await response.json()) as Manifest;
     connection.hidden = true;
-    if (!manifest || next.revision !== manifest.revision) {
+    const changed = !manifest || next.revision !== manifest.revision;
+    if (changed) {
       manifest = next;
       current = 0;
       saveManifest(next);
       warmPhotos(next);
-      renderCurrent();
     }
+    // An unchanged revision still has to be rendered if the frame just paired.
+    if (changed || !pairing.hidden) renderCurrent();
+    return true;
   } catch (_error) {
     connection.hidden = false;
     if (!manifest) {
       manifest = loadSavedManifest();
       if (manifest) renderCurrent();
     }
+    return false;
   }
 }
 
@@ -150,6 +161,9 @@ async function pair(body: { code?: string; token?: string }) {
   try {
     const response = await fetch("/api/pair", {
       method: "POST",
+      // Older WebKit defaults fetch to "omit", which would discard the
+      // session cookie this response exists to set.
+      credentials: "same-origin",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
@@ -164,7 +178,13 @@ async function pair(body: { code?: string; token?: string }) {
     error.textContent = "No connection. Please try again.";
     return false;
   }
-  await refresh();
+  // The code is spent by now. If the session cookie did not survive the
+  // response, say so instead of silently redrawing the same pairing screen.
+  if (!(await refresh())) {
+    error.textContent =
+      "Connected, but this frame could not keep its session. Open the frame over its https address, allow cookies, and use a new code.";
+    return false;
+  }
   return true;
 }
 
