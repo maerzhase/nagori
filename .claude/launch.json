@@ -7,6 +7,12 @@
       "runtimeArgs": ["--filter", "@nagori/web", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "frame",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@nagori/frame", "dev"],
+      "port": 8788
     }
   ]
 }

@@ -1,20 +1,21 @@
 import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@nagori/core";
+import { Button, Checkbox, Field, Input, SlidePreview } from "@nagori/ui";
+import { currentUser } from "@/lib/auth";
+import { getEnv, getStore } from "@/lib/cloudflare";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { isTabKey, type TabKey } from "@/lib/tabs";
+import { InviteForm, PendingInvites } from "@/components/family-forms";
+import { CreateFrameForm, DeviceRows } from "@/components/frame-forms";
+import { MemoryForm } from "@/components/memory-form";
+import { SettingsForm } from "@/components/settings-form";
 import {
   archiveSlideAction,
-  createMessageAction,
-  createPairingCodeAction,
-  createInvitationAction,
-  loginAction,
   logoutAction,
-  revokeDeviceAction,
+  loginAction,
   renewSlideAction,
   rescheduleSlideAction,
   setupAction,
-  updateSettingsAction,
 } from "./actions";
-import { currentUser } from "@/lib/auth";
-import { getEnv, getStore } from "@/lib/cloudflare";
-import { ScheduleFields, UploadForm } from "@/components/upload-form";
 
 export const dynamic = "force-dynamic";
 
@@ -87,38 +88,34 @@ function AuthShell({
           >
             {setup && (
               <>
-                <label>
-                  Your name
-                  <input name="name" autoComplete="name" required />
-                </label>
-                <label>
-                  Family space name
-                  <input
+                <Field label="Your name">
+                  <Input name="name" autoComplete="name" required />
+                </Field>
+                <Field label="Family space name">
+                  <Input
                     name="householdName"
                     defaultValue="Our family"
                     required
                   />
-                </label>
+                </Field>
                 <input name="timezone" type="hidden" value="Europe/Lisbon" />
               </>
             )}
-            <label>
-              Email address
-              <input name="email" type="email" autoComplete="email" required />
-            </label>
-            <label>
-              Password
-              <input
+            <Field label="Email address">
+              <Input name="email" type="email" autoComplete="email" required />
+            </Field>
+            <Field label="Password">
+              <Input
                 name="password"
                 type="password"
                 minLength={12}
                 autoComplete={setup ? "new-password" : "current-password"}
                 required
               />
-            </label>
-            <button className="primary-button" type="submit">
+            </Field>
+            <Button type="submit">
               {setup ? "Create family space" : "Sign in"}
-            </button>
+            </Button>
           </form>
           {!setup && (
             <p className="auth-note">
@@ -128,60 +125,6 @@ function AuthShell({
         </div>
       </section>
     </main>
-  );
-}
-
-function Icon({
-  name,
-}: {
-  name: "home" | "photo" | "people" | "frame" | "settings";
-}) {
-  const paths = {
-    home: (
-      <>
-        <path d="M3 11.5 12 4l9 7.5" />
-        <path d="M5.5 10v10h13V10" />
-      </>
-    ),
-    photo: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <circle cx="9" cy="10" r="2" />
-        <path d="m5 17 4-4 3 3 2-2 5 3" />
-      </>
-    ),
-    people: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3.5 20c.4-4 2.2-6 5.5-6s5.1 2 5.5 6" />
-        <path d="M16 5.5a3 3 0 0 1 0 5.8M17 14c2.3.5 3.5 2.5 3.5 5" />
-      </>
-    ),
-    frame: (
-      <>
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <path d="M8 17h8M12 7v6M9 10h6" />
-      </>
-    ),
-    settings: (
-      <>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" />
-      </>
-    ),
-  };
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths[name]}
-    </svg>
   );
 }
 
@@ -222,20 +165,21 @@ export default async function Home({
       />
     );
 
-  const [slides, settings, activeCount, members, devices] = await Promise.all([
-    store.listSlides(user.householdId),
-    store.getSettings(user.householdId),
-    store.countActiveSlides(user.householdId),
-    store.listMembers(user.householdId),
-    store.listDevices(user.householdId),
-  ]);
+  const [slides, settings, activeCount, members, devices, invitations] =
+    await Promise.all([
+      store.listSlides(user.householdId),
+      store.getSettings(user.householdId),
+      store.countActiveSlides(user.householdId),
+      store.listMembers(user.householdId),
+      store.listDevices(user.householdId),
+      store.listPendingInvitations(user.householdId),
+    ]);
   const grouped = {
     active: slides.filter((slide) => scheduleStatus(slide) === "active"),
     upcoming: slides.filter((slide) => scheduleStatus(slide) === "upcoming"),
     expired: slides.filter((slide) => scheduleStatus(slide) === "expired"),
   };
-  const pairing = typeof params.pairing === "string" ? params.pairing : null;
-  const invite = typeof params.invite === "string" ? params.invite : null;
+  const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "today";
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -243,37 +187,26 @@ export default async function Home({
     .slice(0, 2)
     .toUpperCase();
 
+  const rotationWarning = activeCount >= ACTIVE_SLIDE_WARNING && (
+    <div className="alert warning">
+      The rotation has {activeCount} active slides. Archive a few or give them
+      an end date before it reaches the 200-slide limit.
+    </div>
+  );
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <a href="#top" className="brand">
+    <DashboardShell
+      initialTab={initialTab}
+      libraryCount={slides.length}
+      brand={
+        <span className="brand">
           <Logo />
           <span>
             Nagori <small lang="ja">名残</small>
           </span>
-        </a>
-        <nav>
-          <a href="#top" className="active">
-            <Icon name="home" />
-            Today
-          </a>
-          <a href="#library">
-            <Icon name="photo" />
-            Library <span>{slides.length}</span>
-          </a>
-          <a href="#family">
-            <Icon name="people" />
-            Family
-          </a>
-          <a href="#frame">
-            <Icon name="frame" />
-            Frame
-          </a>
-          <a href="#settings">
-            <Icon name="settings" />
-            Settings
-          </a>
-        </nav>
+        </span>
+      }
+      account={
         <div className="sidebar-foot">
           <div className="avatar">{initials}</div>
           <div>
@@ -286,12 +219,9 @@ export default async function Home({
             </button>
           </form>
         </div>
-      </aside>
-      <main className="dashboard" id="top">
+      }
+      topbar={
         <header className="topbar">
-          <button className="mobile-brand" type="button">
-            <Logo />
-          </button>
           <div>
             <p>{user.householdName}</p>
             <span>Private family space</span>
@@ -305,108 +235,32 @@ export default async function Home({
             <span className="online-dot" /> Open frame
           </a>
         </header>
-        <div className="content">
-          <section className="welcome">
-            <div>
-              <p className="eyebrow">Monday, August 3</p>
-              <h1>Good evening, {user.name.split(" ")[0]}.</h1>
-              <p>
-                {activeCount === 0
-                  ? "The frame is ready for its first memory."
-                  : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} keeping the frame company.`}
-              </p>
-            </div>
-            <a href="#compose" className="primary-button">
-              ＋ Add a memory
-            </a>
-          </section>
-          {activeCount >= ACTIVE_SLIDE_WARNING && (
-            <div className="alert warning">
-              The rotation has {activeCount} active slides. Archive a few or
-              give them an end date before it reaches the 200-slide limit.
-            </div>
-          )}
-          {pairing && (
-            <section className="pair-banner">
+      }
+      panels={{
+        today: (
+          <>
+            <section className="welcome">
               <div>
-                <p className="eyebrow">Frame pairing code</p>
-                <strong>
-                  {pairing.slice(0, 3)} {pairing.slice(3)}
-                </strong>
+                <h1>Good day, {user.name.split(" ")[0]}.</h1>
                 <p>
-                  Open the frame at <b>{getEnv().FRAME_URL}</b> and enter this
-                  code. It expires in 15 minutes.
+                  {activeCount === 0
+                    ? "The frame is ready for its first memory."
+                    : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} keeping the frame company.`}
                 </p>
               </div>
-              <a href={getEnv().FRAME_URL} target="_blank" rel="noreferrer">
-                Open frame ↗
-              </a>
             </section>
-          )}
-          {invite && (
-            <section className="invite-banner">
-              <div>
-                <p className="eyebrow">Invitation ready</p>
-                <strong>Private invite link</strong>
-                <p>
-                  Copy this private link and send it to the family member you
-                  invited. It expires in seven days.
-                </p>
+            {rotationWarning}
+            <section className="composer">
+              <div className="section-intro">
+                <p className="eyebrow">Share something new</p>
+                <h2>A small moment makes their day.</h2>
               </div>
-              <code>{`${getEnv().APP_URL}/join/${invite}`}</code>
+              <MemoryForm showCaptions={settings.showCaptions} />
             </section>
-          )}
-          <section id="compose" className="composer">
-            <div className="section-intro">
-              <p className="eyebrow">Share something new</p>
-              <h2>A small moment makes their day.</h2>
-            </div>
-            <div className="composer-grid">
-              <div className="compose-pane">
-                <div className="pane-title">
-                  <span className="round-icon">↗</span>
-                  <div>
-                    <h3>Share a photo</h3>
-                    <p>From your camera roll to the frame.</p>
-                  </div>
-                </div>
-                <UploadForm />
-              </div>
-              <div className="compose-pane message-pane">
-                <div className="pane-title">
-                  <span className="round-icon">✎</span>
-                  <div>
-                    <h3>Write a note</h3>
-                    <p>A hello, reminder, or little story.</p>
-                  </div>
-                </div>
-                <form action={createMessageAction} className="composer-form">
-                  <label>
-                    Message
-                    <textarea
-                      name="message"
-                      maxLength={280}
-                      placeholder="Thinking of you both today…"
-                      required
-                    />
-                  </label>
-                  <label>
-                    Background
-                    <select name="theme" defaultValue="paper">
-                      <option value="paper">Warm paper</option>
-                      <option value="sunset">Sunset coral</option>
-                      <option value="garden">Garden green</option>
-                    </select>
-                  </label>
-                  <ScheduleFields />
-                  <button className="secondary-button" type="submit">
-                    Add note to frame
-                  </button>
-                </form>
-              </div>
-            </div>
-          </section>
-          <section id="library" className="library">
+          </>
+        ),
+        library: (
+          <section className="library">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Current rotation</p>
@@ -414,32 +268,32 @@ export default async function Home({
               </div>
               <p>{activeCount} of 200 active</p>
             </div>
+            {rotationWarning}
             {grouped.active.length === 0 ? (
               <div className="empty-library">
                 <span>□</span>
                 <h3>No active memories yet</h3>
                 <p>
-                  Share a photo or note above and it will arrive on the frame
-                  within a minute.
+                  Share a photo or note and it will arrive on the frame within a
+                  minute.
                 </p>
               </div>
             ) : (
               <div className="memory-grid">
                 {grouped.active.map((slide) => (
-                  <article
-                    className={`memory-card ${slide.kind}`}
-                    key={slide.id}
-                  >
-                    {slide.kind === "photo" ? (
-                      <img
-                        src={`/api/media/${encodeURIComponent(slide.id)}`}
-                        alt={slide.caption || "Family memory"}
-                      />
-                    ) : (
-                      <div className="note-preview" data-theme={slide.theme}>
-                        {slide.message}
-                      </div>
-                    )}
+                  <article className="memory-card" key={slide.id}>
+                    <SlidePreview
+                      imageUrl={
+                        slide.kind === "photo"
+                          ? `/api/media/${encodeURIComponent(slide.id)}`
+                          : null
+                      }
+                      theme={slide.theme}
+                      message={slide.message}
+                      caption={slide.caption}
+                      fit={settings.fitMode}
+                      showCaption={settings.showCaptions}
+                    />
                     <div className="memory-meta">
                       <div>
                         <span className="status active">Showing now</span>
@@ -453,39 +307,38 @@ export default async function Home({
                       </div>
                       <form action={archiveSlideAction}>
                         <input type="hidden" name="slideId" value={slide.id} />
-                        <button title="Archive slide" type="submit">
+                        <Button size="sm" type="submit" variant="text">
                           Archive
-                        </button>
+                        </Button>
                       </form>
                     </div>
                     <details className="schedule-editor">
                       <summary>Change schedule</summary>
                       <form action={rescheduleSlideAction}>
                         <input type="hidden" name="slideId" value={slide.id} />
-                        <label>
-                          From
-                          <input
-                            name="displayFrom"
-                            type="date"
-                            defaultValue={dateInputValue(slide.displayFrom)}
-                            required
-                          />
-                        </label>
-                        <label>
-                          Until
-                          <input
-                            name="displayUntil"
-                            type="date"
-                            defaultValue={dateInputValue(slide.displayUntil)}
-                          />
-                        </label>
-                        <label className="check">
-                          <input name="forever" type="checkbox" value="yes" />
+                        <div className="date-grid">
+                          <Field label="From">
+                            <Input
+                              name="displayFrom"
+                              type="date"
+                              defaultValue={dateInputValue(slide.displayFrom)}
+                              required
+                            />
+                          </Field>
+                          <Field label="Until">
+                            <Input
+                              name="displayUntil"
+                              type="date"
+                              defaultValue={dateInputValue(slide.displayUntil)}
+                            />
+                          </Field>
+                        </div>
+                        <Checkbox name="forever" value="yes">
                           Keep in rotation forever
-                        </label>
-                        <button className="text-button" type="submit">
+                        </Checkbox>
+                        <Button size="sm" type="submit" variant="text">
                           Save schedule
-                        </button>
+                        </Button>
                       </form>
                     </details>
                   </article>
@@ -522,9 +375,9 @@ export default async function Home({
                             name="slideId"
                             value={slide.id}
                           />
-                          <button className="text-button" type="submit">
+                          <Button size="sm" type="submit" variant="text">
                             Renew for {settings.defaultVisibilityDays} days
-                          </button>
+                          </Button>
                         </form>
                         <form action={archiveSlideAction}>
                           <input
@@ -532,9 +385,9 @@ export default async function Home({
                             name="slideId"
                             value={slide.id}
                           />
-                          <button className="text-button" type="submit">
+                          <Button size="sm" type="submit" variant="text">
                             Archive
-                          </button>
+                          </Button>
                         </form>
                       </div>
                     ))}
@@ -543,69 +396,9 @@ export default async function Home({
               </div>
             )}
           </section>
-          <section className="bottom-grid">
-            <div id="frame" className="utility-section">
-              <p className="eyebrow">Frame</p>
-              <h2>Connect an iPad</h2>
-              <p>
-                Open the viewer on the iPad, add it to the Home Screen, then
-                pair it once. After that, it updates by itself.
-              </p>
-              <form action={createPairingCodeAction} className="inline-form">
-                <input name="name" placeholder="Grandparents’ iPad" required />
-                <button className="secondary-button" type="submit">
-                  Create pairing code
-                </button>
-              </form>
-            </div>
-            <div id="settings" className="utility-section">
-              <p className="eyebrow">Playback</p>
-              <h2>Keep it comfortable</h2>
-              <form action={updateSettingsAction} className="settings-form">
-                <label>
-                  Seconds per slide
-                  <input
-                    name="displaySeconds"
-                    type="number"
-                    min="5"
-                    max="60"
-                    defaultValue={settings.displaySeconds}
-                  />
-                </label>
-                <label>
-                  Photo fit
-                  <select name="fitMode" defaultValue={settings.fitMode}>
-                    <option value="contain">Show whole photo</option>
-                    <option value="cover">Fill the screen</option>
-                  </select>
-                </label>
-                <label>
-                  Default lifetime
-                  <select
-                    name="defaultVisibilityDays"
-                    defaultValue={settings.defaultVisibilityDays}
-                  >
-                    <option value="7">7 days</option>
-                    <option value="30">30 days</option>
-                    <option value="60">60 days</option>
-                    <option value="90">90 days</option>
-                  </select>
-                </label>
-                <label className="check">
-                  <input
-                    name="showCaptions"
-                    type="checkbox"
-                    defaultChecked={settings.showCaptions}
-                  />{" "}
-                  Show captions
-                </label>
-                <button className="text-button" type="submit">
-                  Save settings
-                </button>
-              </form>
-            </div>
-          </section>
-          <section id="family" className="family-section">
+        ),
+        family: (
+          <section className="family-section">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Family access</p>
@@ -616,78 +409,56 @@ export default async function Home({
               </p>
             </div>
             <div className="family-grid">
-              <div className="member-list">
-                {members.map((member) => (
-                  <div key={member.id}>
-                    <span className="avatar">
-                      {member.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <p>
-                      <strong>{member.name}</strong>
-                      <small>{member.email}</small>
-                    </p>
-                    <em>{member.role}</em>
-                  </div>
-                ))}
+              <div>
+                <div className="member-list">
+                  {members.map((member) => (
+                    <div key={member.id}>
+                      <span className="avatar">
+                        {member.name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <p>
+                        <strong>{member.name}</strong>
+                        <small>{member.email}</small>
+                      </p>
+                      <em>{member.role}</em>
+                    </div>
+                  ))}
+                </div>
+                {user.role === "owner" && (
+                  <PendingInvites invitations={invitations} />
+                )}
               </div>
-              {user.role === "owner" && (
-                <form action={createInvitationAction} className="invite-form">
-                  <h3>Invite someone</h3>
-                  <p>We create a private link for you to send.</p>
-                  <label>
-                    Email
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="family@example.com"
-                      required
-                    />
-                  </label>
-                  <label>
-                    Access
-                    <select name="role">
-                      <option value="editor">Can share memories</option>
-                      <option value="viewer">Can only view</option>
-                    </select>
-                  </label>
-                  <button className="secondary-button" type="submit">
-                    Create invite link
-                  </button>
-                </form>
-              )}
+              {user.role === "owner" && <InviteForm />}
             </div>
           </section>
-          {devices.length > 0 && (
-            <section className="device-list">
-              <p className="eyebrow">Connected frames</p>
-              {devices.map((device) => (
-                <div key={device.id}>
-                  <strong>{device.name}</strong>
-                  <span>
-                    {device.paired
-                      ? device.lastSeenAt
-                        ? `Seen ${formatDate(device.lastSeenAt)}`
-                        : "Paired · waiting for first check-in"
-                      : "Waiting to be paired"}
-                  </span>
-                  {user.role === "owner" && (
-                    <form action={revokeDeviceAction}>
-                      <input type="hidden" name="deviceId" value={device.id} />
-                      <button className="text-button" type="submit">
-                        Revoke
-                      </button>
-                    </form>
-                  )}
-                </div>
-              ))}
-            </section>
-          )}
-          <footer>
-            Nagori <span lang="ja">名残</span> <span>·</span> The memories that
-            remain.
-          </footer>
-        </div>
-      </main>
-    </div>
+        ),
+        frame: (
+          <section className="utility-section">
+            <p className="eyebrow">Frame</p>
+            <h2>Connect an iPad</h2>
+            <p>
+              Name the frame, then send the link to whoever has the iPad. They
+              open it, add it to the Home Screen, and tap Connect once. After
+              that it updates by itself.
+            </p>
+            <CreateFrameForm />
+            {devices.length > 0 && (
+              <DeviceRows devices={devices} isOwner={user.role === "owner"} />
+            )}
+          </section>
+        ),
+        settings: (
+          <section className="utility-section">
+            <p className="eyebrow">Playback</p>
+            <h2>Keep it comfortable</h2>
+            <p>These settings apply to every frame in your family space.</p>
+            <SettingsForm
+              settings={settings}
+              saved={params.saved === "settings"}
+            />
+          </section>
+        ),
+      }}
+    />
   );
 }

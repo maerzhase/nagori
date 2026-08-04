@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@nagori/ui/theme.css";
-@source "../../../../../packages/ui/src/**/*.{ts,tsx}";
+/* Relative to this file: app -> src -> web -> apps -> repo root. */
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 /* Local aliases onto the shared palette in @nagori/ui/memory.css. Do not
    redeclare colour values here — tokens are contrast-checked at their source. */
@@ -73,39 +74,6 @@ button {
     600 21px Georgia,
     serif;
 }
-.primary-button,
-.secondary-button {
-  display: inline-flex;
-  min-height: 46px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 8px;
-  padding: 0.8rem 1.15rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-  transition:
-    background 0.2s,
-    transform 0.2s;
-}
-.primary-button {
-  background: var(--memory-coral-strong);
-  color: var(--memory-ink-on-night);
-  box-shadow: 0 8px 22px rgba(185, 78, 54, 0.15);
-}
-.primary-button:hover {
-  background: var(--memory-coral-strong-hover);
-  transform: translateY(-1px);
-}
-.primary-button:disabled {
-  opacity: 0.65;
-  transform: none;
-}
-.secondary-button {
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--memory-ink-on-night);
-}
 .auth-shell {
   display: grid;
   min-height: 100vh;
@@ -177,43 +145,12 @@ button {
   gap: 1rem;
   margin-top: 2rem;
 }
-label {
-  display: grid;
-  gap: 0.45rem;
-  color: #514b43;
-  font-size: 0.78rem;
-  font-weight: 650;
-}
-label span {
-  color: var(--muted-foreground);
-  font-weight: 400;
-}
-input,
-textarea,
-select {
-  width: 100%;
-  border: 1px solid var(--memory-control-border);
-  border-radius: 7px;
-  outline: 0;
-  background: var(--memory-card);
-  color: var(--ink);
-  padding: 0.75rem 0.8rem;
-  transition:
-    border 0.2s,
-    box-shadow 0.2s;
-}
 /* Never leave placeholder text to the user agent: it is the one text colour a
    browser picks for us, and it lands on a surface we set explicitly. */
 input::placeholder,
 textarea::placeholder {
   color: var(--muted-foreground);
   opacity: 1;
-}
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--coral);
-  box-shadow: 0 0 0 3px rgba(217, 104, 76, 0.12);
 }
 .auth-note {
   margin-top: 1.5rem;
@@ -253,35 +190,12 @@ select:focus {
     600 1.05rem Georgia,
     serif;
 }
-.sidebar nav {
-  display: grid;
-  gap: 0.25rem;
-}
-.sidebar nav a {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  border-radius: 7px;
-  padding: 0.7rem 0.75rem;
-  color: var(--muted-foreground);
-  font-size: 0.86rem;
-}
-.sidebar nav a:hover,
-.sidebar nav a.active {
-  background: #fffaf1;
-  color: var(--ink);
-}
-.sidebar nav a.active {
-  box-shadow: inset 3px 0 var(--coral);
-}
-.sidebar nav svg {
-  width: 20px;
-  height: 20px;
-}
-.sidebar nav a > span {
+/* The library count badge, inside the tab button. */
+.sidebar [role="tab"] > span {
   margin-left: auto;
   border-radius: 1rem;
   background: #ded4c6;
+  /* Darker fill than the row, so it cannot inherit the row's muted colour. */
   color: var(--ink);
   padding: 0.1rem 0.4rem;
   font-size: 0.68rem;
@@ -369,9 +283,6 @@ select:focus {
   background: #5b986f;
   box-shadow: 0 0 0 3px #dbeadf;
 }
-.mobile-brand {
-  display: none;
-}
 .content {
   max-width: 1320px;
   margin: 0 auto;
@@ -402,56 +313,6 @@ select:focus {
   background: var(--warning-surface);
   color: var(--warning);
 }
-.pair-banner,
-.invite-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  margin: 0 0 2rem;
-  background: var(--green);
-  padding: 1.4rem 1.6rem;
-  color: white;
-}
-.pair-banner strong {
-  display: block;
-  font:
-    500 2.6rem / 1 Georgia,
-    serif;
-  letter-spacing: 0.18em;
-}
-.pair-banner p:last-child {
-  margin: 0.6rem 0 0;
-  color: #d9e7dc;
-  font-size: 0.78rem;
-}
-.pair-banner > a {
-  border-bottom: 1px solid currentColor;
-  font-size: 0.78rem;
-}
-.invite-banner {
-  background: #403b34;
-}
-.invite-banner strong {
-  font:
-    500 1.2rem Georgia,
-    serif;
-}
-.invite-banner p:last-child {
-  margin: 0.5rem 0 0;
-  color: #d5cec3;
-  font-size: 0.72rem;
-}
-.invite-banner code {
-  max-width: 45%;
-  overflow: hidden;
-  border: 1px solid #70685e;
-  padding: 0.65rem;
-  color: #f5dfc8;
-  font-size: 0.68rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .composer {
   border-top: 1px solid var(--line);
   padding: 3rem 0 4rem;
@@ -462,8 +323,7 @@ select:focus {
 }
 .section-intro h2,
 .section-heading h2,
-.utility-section h2,
-.family-strip h2 {
+.utility-section h2 {
   margin: 0;
   font:
     400 2.15rem / 1.1 Georgia,
@@ -472,44 +332,74 @@ select:focus {
 .composer-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 2.5rem;
   border: 1px solid var(--line);
-  background: #fffdf9;
+  background: var(--memory-card);
+  padding: 1.8rem;
 }
-.compose-pane {
-  min-width: 0;
-  padding: clamp(1.4rem, 3vw, 2.5rem);
+/* The choice between a photo and a colour — one row of radios styled as a
+   segmented control, since it swaps the rest of the form. */
+.segmented {
+  display: flex;
+  gap: 0.4rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
 }
-.compose-pane + .compose-pane {
-  border-left: 1px solid var(--line);
+.segmented legend {
+  margin-bottom: 0.45rem;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 650;
 }
-.pane-title {
+.segmented label {
+  flex: 1;
+}
+.segmented input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.segmented span {
+  display: block;
+  border: 1px solid var(--memory-control-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-align: center;
+}
+.segmented input:checked + span {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--memory-ink-on-night);
+}
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+.composer-preview {
+  position: sticky;
+  top: 6rem;
+}
+.preview-note {
+  margin: 0.7rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.form-footer {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  margin-bottom: 1.5rem;
+  gap: 0.8rem;
 }
-.round-icon {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border-radius: 50%;
-  background: #f0e4d5;
-  color: #8a5640;
-}
-.pane-title h3,
-.pane-title p {
-  margin: 0;
-}
-.pane-title h3 {
-  font:
-    500 1.25rem Georgia,
-    serif;
-}
-.pane-title p {
-  margin-top: 0.2rem;
-  color: var(--muted-foreground);
-  font-size: 0.73rem;
+.form-footer span {
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 650;
 }
 .composer-form {
   display: grid;
@@ -574,17 +464,6 @@ textarea {
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
 }
-.check {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  font-weight: 400;
-}
-.check input {
-  width: auto;
-  accent-color: var(--coral);
-}
 .form-status {
   min-height: 1rem;
   margin: -0.25rem 0 0;
@@ -598,7 +477,6 @@ textarea {
   color: var(--green);
 }
 .library {
-  border-top: 1px solid var(--line);
   padding: 3.5rem 0 4rem;
 }
 .section-heading {
@@ -621,32 +499,6 @@ textarea {
   overflow: hidden;
   border: 1px solid var(--line);
   background: #fffdf9;
-}
-.memory-card > img,
-.note-preview {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: #e8e0d4;
-}
-.note-preview {
-  display: grid;
-  place-items: center;
-  padding: 2rem;
-  color: #30271f;
-  font:
-    500 1.5rem / 1.22 Georgia,
-    serif;
-  text-align: center;
-}
-.note-preview[data-theme="sunset"] {
-  background: var(--coral);
-  color: white;
-}
-.note-preview[data-theme="garden"] {
-  background: var(--green);
-  color: white;
 }
 .memory-meta {
   display: flex;
@@ -678,15 +530,6 @@ textarea {
 .status.active {
   color: var(--success);
 }
-.memory-meta form button,
-.text-button {
-  border: 0;
-  border-bottom: 1px solid var(--memory-control-border);
-  background: transparent;
-  padding: 0.15rem 0;
-  color: var(--muted-foreground);
-  font-size: 0.68rem;
-}
 .schedule-editor {
   border-top: 1px solid var(--line);
   padding: 0.8rem 1rem 1rem;
@@ -702,8 +545,8 @@ textarea {
   gap: 0.6rem;
   margin-top: 0.8rem;
 }
-.schedule-editor .check,
-.schedule-editor .text-button {
+.schedule-editor form > button,
+.schedule-editor form > [role="checkbox"] {
   grid-column: 1 / -1;
   margin: 0;
 }
@@ -778,12 +621,6 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
 .utility-section {
   padding: 3rem 3rem 3rem 0;
 }
@@ -799,12 +636,32 @@ textarea {
 }
 .inline-form {
   display: flex;
+  align-items: end;
   gap: 0.6rem;
   margin-top: 1.4rem;
 }
-.inline-form input {
+.inline-form > *:first-child {
   flex: 1;
-  min-width: 0;
+  max-width: 22rem;
+}
+/* Shown once, straight after a secret is minted. */
+.secret-reveal {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+  border-left: 3px solid var(--memory-garden);
+  background: var(--memory-success-surface);
+  padding: 1rem 1.1rem;
+}
+.secret-reveal p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.secret-alt {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
 }
 .settings-form {
   display: grid;
@@ -812,12 +669,13 @@ textarea {
   gap: 0.8rem;
   margin-top: 1.2rem;
 }
-.settings-form .check,
-.settings-form button {
+.settings-form > [role="checkbox"] {
   align-self: end;
 }
+.settings-form .form-footer {
+  grid-column: 1 / -1;
+}
 .family-section {
-  border-top: 1px solid var(--line);
   padding: 3rem 0;
 }
 .family-grid {
@@ -873,19 +731,55 @@ textarea {
   font-size: 0.7rem;
 }
 .device-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 2.5rem;
   border-top: 1px solid var(--line);
-  padding: 2.5rem 0;
+  padding: 2.5rem 0 0;
 }
-.device-list > div {
-  display: flex;
+.device-row,
+.pending-invite {
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid var(--line);
-  padding: 0.7rem 0;
-  font-size: 0.75rem;
+  gap: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--memory-card);
+  padding: 0.9rem 1rem;
 }
-.device-list span {
+.device-row strong,
+.pending-invite strong {
+  display: block;
+  font-size: 0.86rem;
+}
+.device-row span,
+.pending-invite span {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.device-actions {
+  display: flex;
+  gap: 1rem;
+}
+.device-actions button {
+  white-space: nowrap;
+}
+.device-row .secret-reveal,
+.pending-invite .secret-reveal {
+  grid-column: 1 / -1;
+  margin-top: 0.3rem;
+}
+.pending-invites {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+.pending-invites h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--muted-foreground);
 }
 .join-shell {
@@ -983,32 +877,16 @@ footer span {
     height: 64px;
     padding: 0 1rem;
   }
-  .mobile-brand {
-    display: block;
-    margin-right: 0.7rem;
-    border: 0;
-    background: transparent;
-    padding: 0;
-  }
-  .mobile-brand .logo {
-    width: 32px;
-    height: 32px;
-  }
   .content {
     padding: 2.5rem 1rem 1rem;
   }
   .welcome {
     display: block;
   }
-  .welcome .primary-button {
-    margin-top: 1.5rem;
-  }
   .composer-grid,
-  .bottom-grid,
   .family-grid {
     grid-template-columns: 1fr;
   }
-  .compose-pane + .compose-pane,
   .utility-section + .utility-section {
     border-top: 1px solid var(--line);
     border-left: 0;
@@ -1019,14 +897,6 @@ footer span {
   }
   .memory-grid {
     grid-template-columns: 1fr;
-  }
-  .pair-banner,
-  .invite-banner {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .invite-banner code {
-    max-width: 100%;
   }
   .schedule-groups {
     grid-template-columns: 1fr;

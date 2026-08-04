@@ -12,6 +12,8 @@ export interface SlidePreviewProps {
   caption?: string | null;
   /** Matches the household's photo-fit setting. */
   fit?: "contain" | "cover";
+  /** Stand-in text while the slide has no content yet. */
+  placeholder?: string;
   showCaption?: boolean;
   className?: string;
 }
@@ -27,6 +29,7 @@ export function SlidePreview({
   message,
   caption,
   fit = "contain",
+  placeholder = "Your note will appear here.",
   showCaption = true,
   className,
 }: SlidePreviewProps): JSX.Element {
@@ -55,7 +58,7 @@ export function SlidePreview({
         />
       ) : (
         <p className="m-0 max-w-[85%] px-4 text-center font-serif text-2xl leading-tight break-words">
-          {message || "Your note will appear here."}
+          {message || placeholder}
         </p>
       )}
       {showCaption && caption ? (
