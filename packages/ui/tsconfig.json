@@ -19,6 +19,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": [".storybook/**/*", "src/**/*", "tsdown.config.ts"],
+  "include": [".storybook/**/*", "src/**/*", "tests/**/*", "tsdown.config.ts"],
   "exclude": ["dist", "node_modules"]
 }

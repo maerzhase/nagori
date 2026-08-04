@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#171512" />
+    <meta name="format-detection" content="telephone=no,date=no,address=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <title>Nagori (名残)</title>
@@ -17,9 +18,12 @@
         <h1>Connect this frame</h1>
         <p class="hint">Enter the six-digit code from your family dashboard.</p>
         <form id="pair-form">
-          <label for="code">Pairing code</label>
-          <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
-          <button type="submit">Connect frame</button>
+          <div id="pair-code-fields">
+            <label for="code">Pairing code</label>
+            <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
+            <button type="submit">Connect frame</button>
+          </div>
+          <button id="pair-link" type="button" hidden>Connect this frame</button>
           <p id="pair-error" class="error" role="alert"></p>
         </form>
       </section>

@@ -1,3 +1,4 @@
+import { Button, Field, Input } from "@nagori/ui";
 import { acceptInvitationAction } from "../../actions";
 import { getStore } from "@/lib/cloudflare";
 
@@ -37,27 +38,22 @@ export default async function JoinPage({
             )}
             <form action={acceptInvitationAction} className="auth-form">
               <input type="hidden" name="token" value={token} />
-              <label>
-                Email address
-                <input value={invitation.email} disabled />
-              </label>
-              <label>
-                Your name
-                <input name="name" autoComplete="name" required />
-              </label>
-              <label>
-                Choose a password
-                <input
+              <Field label="Email address">
+                <Input value={invitation.email} disabled />
+              </Field>
+              <Field label="Your name">
+                <Input name="name" autoComplete="name" required />
+              </Field>
+              <Field label="Choose a password" hint="at least 12 characters">
+                <Input
                   name="password"
                   type="password"
                   minLength={12}
                   autoComplete="new-password"
                   required
                 />
-              </label>
-              <button className="primary-button" type="submit">
-                Join family
-              </button>
+              </Field>
+              <Button type="submit">Join family</Button>
             </form>
           </>
         ) : (
@@ -65,9 +61,9 @@ export default async function JoinPage({
             <p className="eyebrow">Invitation unavailable</p>
             <h1>This link has expired.</h1>
             <p>Ask your family owner to create a fresh invitation.</p>
-            <a className="primary-button" href="/">
+            <Button nativeButton={false} render={<a href="/" />}>
               Back to sign in
-            </a>
+            </Button>
           </>
         )}
       </div>

@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@nagori/web", "dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "frame",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@nagori/frame", "dev"],
+      "port": 8788
+    }
+  ]
+}

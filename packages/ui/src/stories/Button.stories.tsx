@@ -10,7 +10,7 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: "inline-radio",
-      options: ["primary", "secondary"],
+      options: ["primary", "secondary", "outline", "text"],
     },
     size: {
       control: "inline-radio",
@@ -38,5 +38,19 @@ export const Secondary: Story = {
 export const Large: Story = {
   args: {
     size: "lg",
+  },
+};
+
+export const Outline: Story = {
+  args: {
+    variant: "outline",
+    children: "Secondary action",
+  },
+};
+
+export const Text: Story = {
+  args: {
+    variant: "text",
+    children: "Save schedule",
   },
 };

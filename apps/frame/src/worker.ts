@@ -57,31 +57,41 @@ export default {
     }
 
     if (url.pathname === "/api/pair" && request.method === "POST") {
-      const limit = await store.consumeRateLimit({
-        scope: "pair",
-        identifier:
-          request.headers.get("cf-connecting-ip") ??
-          request.headers.get("x-forwarded-for") ??
-          "unknown",
-        maxAttempts: 10,
-        windowMs: 15 * 60_000,
-      });
-      if (!limit.allowed) {
-        return secure(
-          json(
-            { error: "too_many_attempts" },
-            {
-              status: 429,
-              headers: { "retry-after": String(limit.retryAfterSeconds) },
-            },
-          ),
-        );
-      }
-      const body = (await request.json()) as { code?: string };
+      const body = (await request.json()) as { code?: string; token?: string };
       const code = body.code;
-      if (!code || !/^\d{6}$/.test(code))
+      const token = body.token;
+      if (!code && !token)
         return secure(json({ error: "invalid_code" }, { status: 400 }));
-      const result = await store.claimPairingCode(code);
+      // Only the six-digit path is guessable, so only it is rate limited. A
+      // link is 128-bit, and throttling it would let attempts against the code
+      // lock out the path the recipient actually uses.
+      if (code) {
+        const limit = await store.consumeRateLimit({
+          scope: "pair",
+          identifier:
+            request.headers.get("cf-connecting-ip") ??
+            request.headers.get("x-forwarded-for") ??
+            "unknown",
+          maxAttempts: 10,
+          windowMs: 15 * 60_000,
+        });
+        if (!limit.allowed) {
+          return secure(
+            json(
+              { error: "too_many_attempts" },
+              {
+                status: 429,
+                headers: { "retry-after": String(limit.retryAfterSeconds) },
+              },
+            ),
+          );
+        }
+        if (!/^\d{6}$/.test(code))
+          return secure(json({ error: "invalid_code" }, { status: 400 }));
+      }
+      const result = code
+        ? await store.claimPairingCode(code)
+        : await store.claimPairingLink(token as string);
       if (!result)
         return secure(json({ error: "invalid_code" }, { status: 401 }));
       return secure(

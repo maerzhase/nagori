@@ -6,12 +6,14 @@ import {
   hashPassword,
   isStrongEnoughPassword,
   normalizeEmail,
+  type PairingSecrets,
 } from "@nagori/core";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser, SESSION_COOKIE, setSessionCookie } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
+import type { InviteResult, PairingResult } from "./action-results";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -107,7 +109,8 @@ export async function createMessageAction(formData: FormData) {
     defaultVisibilityDays: settings.defaultVisibilityDays,
   });
   revalidatePath("/");
-  redirect("/?created=message");
+  // No redirect: the caller is the composer, which reports success in place
+  // next to its preview, exactly as the photo path does.
 }
 
 export async function rescheduleSlideAction(formData: FormData) {
@@ -133,7 +136,7 @@ export async function rescheduleSlideAction(formData: FormData) {
     redirect("/?error=schedule");
   }
   revalidatePath("/");
-  redirect("/?saved=schedule#library");
+  redirect("/?saved=schedule&tab=library");
 }
 
 export async function renewSlideAction(formData: FormData) {
@@ -150,7 +153,7 @@ export async function renewSlideAction(formData: FormData) {
     displayUntil: schedule.displayUntil,
   });
   revalidatePath("/");
-  redirect("/?saved=renewed#library");
+  redirect("/?saved=renewed&tab=library");
 }
 
 export async function archiveSlideAction(formData: FormData) {
@@ -165,14 +168,49 @@ export async function archiveSlideAction(formData: FormData) {
   revalidatePath("/");
 }
 
-export async function createPairingCodeAction(formData: FormData) {
+/**
+ * Returns the secrets instead of redirecting with them in a query param, so a
+ * pairing code never lands in browser history or a Worker access log.
+ */
+export async function createPairingCodeAction(
+  _previous: PairingResult | null,
+  formData: FormData,
+): Promise<PairingResult> {
   const user = await requireUser();
-  if (user.role === "viewer") redirect("/?error=permission");
-  const code = await getStore().createPairingCode(
-    user.householdId,
-    text(formData, "name"),
-  );
-  redirect(`/?pairing=${encodeURIComponent(code)}`);
+  if (user.role === "viewer") return { error: "permission" };
+  const name = text(formData, "name");
+  if (!name) return { error: "name" };
+  const secrets = await getStore().createPairingCode(user.householdId, name);
+  revalidatePath("/");
+  return pairingResult(name, secrets);
+}
+
+export async function rotatePairingCodeAction(
+  _previous: PairingResult | null,
+  formData: FormData,
+): Promise<PairingResult> {
+  const user = await requireUser();
+  if (user.role !== "owner") return { error: "permission" };
+  const secrets = await getStore().rotatePairingCode({
+    householdId: user.householdId,
+    userId: user.id,
+    deviceId: text(formData, "deviceId"),
+  });
+  if (!secrets) return { error: "not_found" };
+  revalidatePath("/");
+  return pairingResult(text(formData, "name"), secrets);
+}
+
+function pairingResult(name: string, secrets: PairingSecrets): PairingResult {
+  return {
+    name,
+    code: secrets.code,
+    codeExpiresAt: secrets.codeExpiresAt,
+    // The token rides in the fragment: fragments are not sent to the server,
+    // so the secret stays out of request lines, logs, and Referer headers.
+    link: `${getEnv().FRAME_URL}/#t=${encodeURIComponent(secrets.linkToken)}`,
+    linkExpiresAt: secrets.linkExpiresAt,
+  };
 }
 
 export async function revokeDeviceAction(formData: FormData) {
@@ -184,7 +222,7 @@ export async function revokeDeviceAction(formData: FormData) {
     deviceId: text(formData, "deviceId"),
   });
   revalidatePath("/");
-  redirect("/?saved=device_revoked#frame");
+  redirect("/?saved=device_revoked&tab=frame");
 }
 
 export async function updateSettingsAction(formData: FormData) {
@@ -214,14 +252,17 @@ export async function updateSettingsAction(formData: FormData) {
     .bind(user.householdId)
     .run();
   revalidatePath("/");
-  redirect("/?saved=settings");
+  redirect("/?saved=settings&tab=settings");
 }
 
-export async function createInvitationAction(formData: FormData) {
+export async function createInvitationAction(
+  _previous: InviteResult | null,
+  formData: FormData,
+): Promise<InviteResult> {
   const user = await requireUser();
-  if (user.role !== "owner") redirect("/?error=permission");
+  if (user.role !== "owner") return { error: "permission" };
   const email = normalizeEmail(text(formData, "email"));
-  if (!email.includes("@")) redirect("/?error=invite");
+  if (!email.includes("@")) return { error: "invite" };
   const requestedRole = text(formData, "role");
   const role = requestedRole === "viewer" ? "viewer" : "editor";
   const token = await getStore().createInvitation({
@@ -230,7 +271,40 @@ export async function createInvitationAction(formData: FormData) {
     email,
     role,
   });
-  redirect(`/?invite=${encodeURIComponent(token)}`);
+  revalidatePath("/");
+  return { email, link: inviteLink(token) };
+}
+
+export async function rotateInvitationAction(
+  _previous: InviteResult | null,
+  formData: FormData,
+): Promise<InviteResult> {
+  const user = await requireUser();
+  if (user.role !== "owner") return { error: "permission" };
+  const rotated = await getStore().rotateInvitationToken({
+    householdId: user.householdId,
+    userId: user.id,
+    invitationId: text(formData, "invitationId"),
+  });
+  if (!rotated) return { error: "not_found" };
+  revalidatePath("/");
+  return { email: rotated.email, link: inviteLink(rotated.token) };
+}
+
+export async function revokeInvitationAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "owner") redirect("/?error=permission");
+  await getStore().revokeInvitation({
+    householdId: user.householdId,
+    userId: user.id,
+    invitationId: text(formData, "invitationId"),
+  });
+  revalidatePath("/");
+  redirect("/?tab=family");
+}
+
+function inviteLink(token: string) {
+  return `${getEnv().APP_URL}/join/${encodeURIComponent(token)}`;
 }
 
 export async function acceptInvitationAction(formData: FormData) {

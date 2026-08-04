@@ -2,7 +2,6 @@
   "name": "@nagori/ui",
   "description": "Shared Nagori design tokens and interface components.",
   "version": "0.1.0",
-  "private": true,
   "dependencies": {
     "@base-ui/react": "1.6.0",
     "class-variance-authority": "0.7.1",
@@ -27,7 +26,8 @@
     "tailwindcss": "4.3.2",
     "tsdown": "0.22.4",
     "typescript": "5.9.3",
-    "vite-tsconfig-paths": "6.1.1"
+    "vite-tsconfig-paths": "6.1.1",
+    "vitest": "4.1.10"
   },
   "exports": {
     ".": {
@@ -49,6 +49,7 @@
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
+  "private": true,
   "scripts": {
     "build": "tsdown && tailwindcss -i src/styles/styles.css -o dist/styles.css --minify",
     "build-storybook": "storybook build",
@@ -58,6 +59,7 @@
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "storybook": "storybook dev -p 6007",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "sideEffects": [

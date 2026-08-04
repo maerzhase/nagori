@@ -11,11 +11,27 @@
   --color-paper: var(--memory-paper);
   --color-ink: var(--memory-ink);
   --color-coral: var(--memory-coral);
+  --color-coral-strong: var(--memory-coral-strong);
+  --color-coral-strong-hover: var(--memory-coral-strong-hover);
+  --color-on-strong: var(--memory-ink-on-night);
   --color-garden: var(--memory-garden);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
   --font-serif: Georgia, "Times New Roman", serif;
 }
 
 @layer base {
+  /* Declared on the root, not just body: user-agent-painted text — validation
+     bubbles, autofill, placeholders — otherwise picks its own scheme and can
+     land unreadable on our fixed light surfaces. */
+  :root {
+    color-scheme: light;
+  }
+
   body {
     --memory-paper: #f7f3ec;
     --memory-ink: #29251f;
@@ -23,13 +39,19 @@
     --memory-garden: #365d4b;
     --background: var(--memory-paper);
     --foreground: var(--memory-ink);
-    --card: #fffdf9;
+    --card: var(--memory-card);
     --card-foreground: var(--memory-ink);
-    --muted: #eee5d8;
-    --muted-foreground: #756d63;
-    --border: #ded6ca;
-    --input: #cdc4b8;
+    --muted: var(--memory-cream);
+    --muted-foreground: var(--memory-muted);
+    --border: var(--memory-line);
+    --input: var(--memory-control-border);
     --ring: var(--memory-coral);
+    --danger: var(--memory-danger);
+    --danger-surface: var(--memory-danger-surface);
+    --success: var(--memory-success);
+    --success-surface: var(--memory-success-surface);
+    --warning: var(--memory-warning);
+    --warning-surface: var(--memory-warning-surface);
     --page-background: var(--memory-paper);
     color-scheme: light;
   }
