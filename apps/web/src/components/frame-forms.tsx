@@ -1,7 +1,7 @@
 "use client";
 
 import type { DeviceRow } from "@nagori/core";
-import { Button, CopyField, Field, Input } from "@nagori/ui";
+import { Button, ConfirmButton, CopyField, Field, Input } from "@nagori/ui";
 import { useActionState } from "react";
 import type { PairingResult } from "@/app/action-results";
 import {
@@ -130,9 +130,27 @@ function DeviceRowItem({
         {isOwner ? (
           <form action={revokeDeviceAction}>
             <input type="hidden" name="deviceId" value={device.id} />
-            <Button size="sm" type="submit" variant="subtle">
+            {/* The stakes differ: cancelling voids a link nobody has used yet,
+                disconnecting takes a working frame off the rotation. */}
+            <ConfirmButton
+              label={
+                waiting ? `Cancel ${device.name}` : `Disconnect ${device.name}`
+              }
+              heading={
+                waiting ? "Cancel this frame?" : "Disconnect this frame?"
+              }
+              description={
+                waiting
+                  ? `The link for ${device.name} stops working. Nothing is connected yet, so no frame changes.`
+                  : `${device.name} stops showing your memories within a minute, and connecting it again needs a new link.`
+              }
+              confirmLabel={waiting ? "Cancel it" : "Disconnect it"}
+              cancelLabel="Leave it"
+              size="sm"
+              variant="subtle"
+            >
               {waiting ? "Cancel" : "Disconnect"}
-            </Button>
+            </ConfirmButton>
           </form>
         ) : null}
       </div>

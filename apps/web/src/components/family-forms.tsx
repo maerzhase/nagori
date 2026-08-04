@@ -1,7 +1,14 @@
 "use client";
 
 import type { PendingInvitationRow } from "@nagori/core";
-import { Button, CopyField, Field, Input, Select } from "@nagori/ui";
+import {
+  Button,
+  ConfirmButton,
+  CopyField,
+  Field,
+  Input,
+  Select,
+} from "@nagori/ui";
 import { useActionState } from "react";
 import type { InviteResult } from "@/app/action-results";
 import {
@@ -124,9 +131,17 @@ function PendingInviteRow({
         </form>
         <form action={revokeInvitationAction}>
           <input type="hidden" name="invitationId" value={invitation.id} />
-          <Button size="sm" type="submit" variant="subtle">
+          <ConfirmButton
+            label={`Cancel the invitation for ${invitation.email}`}
+            heading="Cancel this invitation?"
+            description={`The link stops working, so ${invitation.email} can no longer use it to join. You can always invite them again.`}
+            confirmLabel="Cancel it"
+            cancelLabel="Keep it"
+            size="sm"
+            variant="subtle"
+          >
             Cancel invite
-          </Button>
+          </ConfirmButton>
         </form>
       </div>
       {result ? <InviteSecret result={result} /> : null}
