@@ -99,7 +99,11 @@ export default {
           { ok: true },
           {
             headers: {
-              "set-cookie": `frame_session=${encodeURIComponent(result.token)}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=31536000`,
+              // Lax, not Strict: iOS 12 WebKit's first SameSite implementation
+              // over-applied Strict and could withhold the cookie even on
+              // same-site fetches. The dashboard already uses Lax, and every
+              // cookie-guarded frame endpoint is a read.
+              "set-cookie": `frame_session=${encodeURIComponent(result.token)}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=31536000`,
             },
           },
         ),

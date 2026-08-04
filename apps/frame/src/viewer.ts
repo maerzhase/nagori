@@ -155,6 +155,33 @@ async function refresh(): Promise<boolean> {
   }
 }
 
+/**
+ * The frame has no reachable devtools, so on a pairing failure the screen
+ * itself must say what happened: whether a session survived (manifest status)
+ * and whether this browser can store cookies at all.
+ */
+async function sessionProbe(): Promise<string> {
+  let manifestStatus = "unreachable";
+  try {
+    const response = await fetch("/api/manifest", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    manifestStatus = String(response.status);
+  } catch (_error) {
+    /* keep "unreachable" */
+  }
+  let cookieTest = "blocked";
+  try {
+    // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API does not exist on iOS 12.
+    document.cookie = "nagori_probe=1; Path=/; SameSite=Lax";
+    if (document.cookie.indexOf("nagori_probe=1") !== -1) cookieTest = "ok";
+  } catch (_error) {
+    /* keep "blocked" */
+  }
+  return `manifest ${manifestStatus}, cookie test ${cookieTest}`;
+}
+
 async function pair(body: { code?: string; token?: string }) {
   const error = document.getElementById("pair-error") as HTMLElement;
   error.textContent = "";
@@ -181,8 +208,7 @@ async function pair(body: { code?: string; token?: string }) {
   // The code is spent by now. If the session cookie did not survive the
   // response, say so instead of silently redrawing the same pairing screen.
   if (!(await refresh())) {
-    error.textContent =
-      "Connected, but this frame could not keep its session. Open the frame over its https address, allow cookies, and use a new code.";
+    error.textContent = `Connected, but this frame could not keep its session (${await sessionProbe()}). Allow cookies for this site, then ask for a new code.`;
     return false;
   }
   return true;
