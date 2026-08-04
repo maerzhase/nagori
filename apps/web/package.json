@@ -31,6 +31,7 @@
     "build:cloudflare": "opennextjs-cloudflare build",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:migrate:local": "wrangler d1 migrations apply nagori --local --persist-to ../../.wrangler/state",
+    "db:seed:local": "pnpm db:migrate:local && wrangler d1 execute nagori --local --persist-to ../../.wrangler/state --file ../../packages/core/seeds/dev.sql",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "dev": "next dev",
     "format": "biome format .",

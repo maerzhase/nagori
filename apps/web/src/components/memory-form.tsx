@@ -262,7 +262,7 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
                 {photoUrl ? "Choose another photo" : "Choose a photo"}
               </strong>
               <span>
-                HEIC, JPEG or PNG · prepared for the frame automatically
+                HEIC, JPEG, or PNG — we’ll get it ready for the frame.
               </span>
               <input
                 name="photo"

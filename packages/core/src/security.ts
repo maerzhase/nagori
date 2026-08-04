@@ -63,6 +63,9 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/** Minimum length only. Composition rules and maximums do more harm than good. */
+export const MINIMUM_PASSWORD_LENGTH = 8;
+
 export function isStrongEnoughPassword(password: string): boolean {
-  return password.length >= 12;
+  return password.length >= MINIMUM_PASSWORD_LENGTH;
 }

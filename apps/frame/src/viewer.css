@@ -89,16 +89,10 @@ body {
   color: var(--memory-ink, #29251f);
 }
 .mark {
-  display: grid;
+  display: block;
   width: 56px;
   height: 56px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--memory-coral, #d9684c);
-  color: white;
-  font:
-    600 28px Georgia,
-    serif;
+  object-fit: contain;
 }
 .eyebrow {
   margin: 2rem 0 0.25rem;

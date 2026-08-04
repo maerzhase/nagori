@@ -1,3 +1,4 @@
+import { MINIMUM_PASSWORD_LENGTH } from "@nagori/core";
 import { Button, Field, Input } from "@nagori/ui";
 import { acceptInvitationAction } from "../../actions";
 import { getStore } from "@/lib/cloudflare";
@@ -17,7 +18,14 @@ export default async function JoinPage({
   return (
     <main className="join-shell">
       <div className="join-card">
-        <span className="logo">M</span>
+        <img
+          className="logo"
+          src="/logo.png"
+          alt=""
+          width={38}
+          height={38}
+          aria-hidden="true"
+        />
         {invitation ? (
           <>
             <p className="eyebrow">Family invitation</p>
@@ -32,7 +40,7 @@ export default async function JoinPage({
             {error && (
               <div className="alert">
                 {error === "password"
-                  ? "Use a password with at least 12 characters."
+                  ? `Use a password with at least ${MINIMUM_PASSWORD_LENGTH} characters.`
                   : "This invitation is no longer available."}
               </div>
             )}
@@ -44,11 +52,14 @@ export default async function JoinPage({
               <Field label="Your name">
                 <Input name="name" autoComplete="name" required />
               </Field>
-              <Field label="Choose a password" hint="at least 12 characters">
+              <Field
+                label="Choose a password"
+                hint={`at least ${MINIMUM_PASSWORD_LENGTH} characters`}
+              >
                 <Input
                   name="password"
                   type="password"
-                  minLength={12}
+                  minLength={MINIMUM_PASSWORD_LENGTH}
                   autoComplete="new-password"
                   required
                 />

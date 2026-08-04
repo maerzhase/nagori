@@ -1,4 +1,8 @@
-import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@nagori/core";
+import {
+  ACTIVE_SLIDE_WARNING,
+  MINIMUM_PASSWORD_LENGTH,
+  scheduleStatus,
+} from "@nagori/core";
 import { Button, Field, Input, SlidePreview } from "@nagori/ui";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
@@ -22,9 +26,16 @@ export const dynamic = "force-dynamic";
 
 function Logo() {
   return (
-    <span className="logo" aria-hidden="true">
-      M
-    </span>
+    // Plain <img>: the file is a fixed-size static asset in /public, so the
+    // Next image loader would only add a request for the same bytes.
+    <img
+      className="logo"
+      src="/logo.png"
+      alt=""
+      width={38}
+      height={38}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -46,18 +57,16 @@ function AuthShell({
           </span>
         </div>
         <div className="auth-copy">
-          <p className="eyebrow">A window into family life</p>
+          <p className="eyebrow">A quiet way to stay close</p>
           <h1>
             The photos that matter, <em>already there.</em>
           </h1>
           <p>
-            Share a moment from your phone. It quietly appears on the family
-            frame — no taps, passwords or instructions needed on the other side.
+            Share a moment from your phone, and it appears on the family frame
+            at home — no taps, passwords, or setup for the people watching.
           </p>
         </div>
-        <p className="auth-foot">
-          Designed for old iPads and the people we love.
-        </p>
+        <p className="auth-foot">Made for the people you love.</p>
       </section>
       <section className="auth-panel">
         <div className="auth-form-wrap">
@@ -80,7 +89,7 @@ function AuthShell({
                   ? "Too many attempts. Please wait 15 minutes and try again."
                   : error === "owner_email"
                     ? "Setup is reserved for this deployment’s configured owner email."
-                    : "Please check the details and use a password with at least 12 characters."}
+                    : `Please check the details and use a password with at least ${MINIMUM_PASSWORD_LENGTH} characters.`}
             </div>
           )}
           <form
@@ -109,7 +118,10 @@ function AuthShell({
               <Input
                 name="password"
                 type="password"
-                minLength={12}
+                // Only when creating one. On sign-in the password already
+                // exists, so a minimum here could only refuse to submit one the
+                // server would have accepted.
+                minLength={setup ? MINIMUM_PASSWORD_LENGTH : undefined}
                 autoComplete={setup ? "new-password" : "current-password"}
                 required
               />
@@ -176,7 +188,7 @@ export default async function Home({
     upcoming: slides.filter((slide) => scheduleStatus(slide) === "upcoming"),
     expired: slides.filter((slide) => scheduleStatus(slide) === "expired"),
   };
-  const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "today";
+  const initialTab: TabKey = isTabKey(params.tab) ? params.tab : "home";
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -186,8 +198,8 @@ export default async function Home({
 
   const rotationWarning = activeCount >= ACTIVE_SLIDE_WARNING && (
     <div className="alert warning">
-      The rotation has {activeCount} active slides. Archive a few or give them
-      an end date before it reaches the 200-slide limit.
+      There are {activeCount} memories on the frame. Archive a few, or give some
+      an end date, before you reach the limit of 200.
     </div>
   );
 
@@ -236,15 +248,15 @@ export default async function Home({
         </header>
       }
       panels={{
-        today: (
+        home: (
           <>
             <section className="welcome">
               <div>
-                <h1>Good day, {user.name.split(" ")[0]}.</h1>
+                <h1>Hello, {user.name.split(" ")[0]}.</h1>
                 <p>
                   {activeCount === 0
                     ? "The frame is ready for its first memory."
-                    : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} keeping the frame company.`}
+                    : `${activeCount} ${activeCount === 1 ? "memory is" : "memories are"} playing on the frame right now.`}
                 </p>
               </div>
             </section>
@@ -252,7 +264,7 @@ export default async function Home({
             <section className="composer">
               <div className="section-intro">
                 <p className="eyebrow">Share something new</p>
-                <h2>A small moment makes their day.</h2>
+                <h2>What would you like to share?</h2>
               </div>
               <MemoryForm showCaptions={settings.showCaptions} />
             </section>
@@ -291,50 +303,86 @@ export default async function Home({
             {(grouped.upcoming.length > 0 || grouped.expired.length > 0) && (
               <div className="schedule-groups">
                 {grouped.upcoming.length > 0 && (
-                  <div>
+                  <section className="schedule-group">
                     <h3>Coming up</h3>
-                    {grouped.upcoming.map((slide) => (
-                      <div className="schedule-item" key={slide.id}>
-                        <strong>
-                          {slide.caption || slide.message?.slice(0, 45)}
-                        </strong>
-                        <span>Starts {formatDate(slide.displayFrom)}</span>
-                      </div>
-                    ))}
-                  </div>
+                    <div className="schedule-list">
+                      {grouped.upcoming.map((slide) => (
+                        <div className="schedule-item" key={slide.id}>
+                          <SlidePreview
+                            imageUrl={
+                              slide.kind === "photo"
+                                ? `/api/media/${encodeURIComponent(slide.id)}`
+                                : null
+                            }
+                            theme={slide.theme}
+                            message={slide.message}
+                            caption={slide.caption}
+                            fit={slide.fitMode ?? settings.fitMode}
+                            focalPoint={slide.focalPoint ?? settings.focalPoint}
+                            showCaption={settings.showCaptions}
+                          />
+                          <div className="schedule-meta">
+                            <strong>
+                              {slide.caption || slide.message?.slice(0, 45)}
+                            </strong>
+                            <span>Starts {formatDate(slide.displayFrom)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
                 {grouped.expired.length > 0 && (
-                  <div>
+                  <section className="schedule-group">
                     <h3>Ready to archive</h3>
-                    {grouped.expired.map((slide) => (
-                      <div className="schedule-item" key={slide.id}>
-                        <strong>
-                          {slide.caption || slide.message?.slice(0, 45)}
-                        </strong>
-                        <span>Ended {formatDate(slide.displayUntil)}</span>
-                        <form action={renewSlideAction}>
-                          <input
-                            type="hidden"
-                            name="slideId"
-                            value={slide.id}
+                    <div className="schedule-list">
+                      {grouped.expired.map((slide) => (
+                        <div className="schedule-item" key={slide.id}>
+                          <SlidePreview
+                            imageUrl={
+                              slide.kind === "photo"
+                                ? `/api/media/${encodeURIComponent(slide.id)}`
+                                : null
+                            }
+                            theme={slide.theme}
+                            message={slide.message}
+                            caption={slide.caption}
+                            fit={slide.fitMode ?? settings.fitMode}
+                            focalPoint={slide.focalPoint ?? settings.focalPoint}
+                            showCaption={settings.showCaptions}
                           />
-                          <Button size="sm" type="submit" variant="outline">
-                            Renew for {settings.defaultVisibilityDays} days
-                          </Button>
-                        </form>
-                        <form action={archiveSlideAction}>
-                          <input
-                            type="hidden"
-                            name="slideId"
-                            value={slide.id}
-                          />
-                          <Button size="sm" type="submit" variant="subtle">
-                            Archive
-                          </Button>
-                        </form>
-                      </div>
-                    ))}
-                  </div>
+                          <div className="schedule-meta">
+                            <strong>
+                              {slide.caption || slide.message?.slice(0, 45)}
+                            </strong>
+                            <span>Ended {formatDate(slide.displayUntil)}</span>
+                          </div>
+                          <div className="schedule-actions">
+                            <form action={renewSlideAction}>
+                              <input
+                                type="hidden"
+                                name="slideId"
+                                value={slide.id}
+                              />
+                              <Button size="sm" type="submit" variant="outline">
+                                Renew for {settings.defaultVisibilityDays} days
+                              </Button>
+                            </form>
+                            <form action={archiveSlideAction}>
+                              <input
+                                type="hidden"
+                                name="slideId"
+                                value={slide.id}
+                              />
+                              <Button size="sm" type="submit" variant="subtle">
+                                Archive
+                              </Button>
+                            </form>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
               </div>
             )}
@@ -393,7 +441,7 @@ export default async function Home({
         settings: (
           <section className="utility-section">
             <p className="eyebrow">Playback</p>
-            <h2>Keep it comfortable</h2>
+            <h2>How the frame plays</h2>
             <p>These settings apply to every frame in your family space.</p>
             <SettingsForm
               settings={settings}

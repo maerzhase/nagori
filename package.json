@@ -18,6 +18,7 @@
     "changeset": "changeset",
     "check": "pnpm syncpack:lint && turbo run lint format typecheck",
     "db:migrate:local": "pnpm --filter @nagori/web db:migrate:local",
+    "db:seed:local": "pnpm --filter @nagori/web db:seed:local",
     "dev": "concurrently --kill-others --names web,frame --prefix-colors blue,magenta \"pnpm --filter @nagori/web dev\" \"pnpm --filter @nagori/frame dev\"",
     "fix": "pnpm syncpack:fix && turbo run lint:fix format:fix",
     "format": "turbo run format",

@@ -4,10 +4,10 @@
  * are not callable from the server.
  */
 
-export type TabKey = "today" | "library" | "family" | "frame" | "settings";
+export type TabKey = "home" | "library" | "family" | "frame" | "settings";
 
 export const TAB_KEYS: readonly TabKey[] = [
-  "today",
+  "home",
   "library",
   "family",
   "frame",
@@ -15,7 +15,7 @@ export const TAB_KEYS: readonly TabKey[] = [
 ];
 
 export const TAB_LABELS: Record<TabKey, string> = {
-  today: "Today",
+  home: "Share Memory",
   library: "Library",
   family: "Family",
   frame: "Frames",

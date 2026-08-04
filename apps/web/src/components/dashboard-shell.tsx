@@ -1,7 +1,7 @@
 "use client";
 
 import { Tab, TabPanel, Tabs, TabsList } from "@nagori/ui";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { isTabKey, TAB_KEYS, TAB_LABELS, type TabKey } from "@/lib/tabs";
 
 export interface DashboardShellProps {
@@ -22,6 +22,33 @@ export function DashboardShell({
   panels,
 }: DashboardShellProps) {
   const [tab, setTab] = useState<TabKey>(initialTab);
+  const [navOpen, setNavOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // While the drawer is open, hold the page still behind it, move focus into it,
+  // and let Escape close it. Off-canvas visibility is handled in CSS, so this
+  // only runs on the narrow layout where the drawer is actually reachable.
+  useEffect(() => {
+    if (!navOpen) return;
+    closeRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNavOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [navOpen]);
+
+  const closeNav = () => {
+    setNavOpen(false);
+    toggleRef.current?.focus();
+  };
+
   return (
     <Tabs
       className="app-shell"
@@ -30,6 +57,9 @@ export function DashboardShell({
       onValueChange={(value) => {
         if (!isTabKey(value)) return;
         setTab(value);
+        // On the phone layout the tabs live in a drawer; picking one is the
+        // end of that interaction, so close it.
+        setNavOpen(false);
         // Shallow update: the panels are already in the tree, so a router
         // navigation would refetch the page to show what is on screen. The
         // param still exists so a server action can redirect back to a tab.
@@ -40,8 +70,40 @@ export function DashboardShell({
         window.history.replaceState(null, "", url);
       }}
     >
-      <aside className="sidebar">
+      <header className="mobile-header">
+        <button
+          ref={toggleRef}
+          type="button"
+          className="nav-toggle"
+          aria-label="Open menu"
+          aria-controls="app-nav"
+          aria-expanded={navOpen}
+          onClick={() => setNavOpen(true)}
+        >
+          <BurgerIcon />
+        </button>
         {brand}
+      </header>
+      <button
+        type="button"
+        className={`nav-scrim${navOpen ? " open" : ""}`}
+        aria-label="Close menu"
+        tabIndex={-1}
+        onClick={closeNav}
+      />
+      <aside className={`sidebar${navOpen ? " open" : ""}`} id="app-nav">
+        <div className="sidebar-head">
+          {brand}
+          <button
+            ref={closeRef}
+            type="button"
+            className="nav-close"
+            aria-label="Close menu"
+            onClick={closeNav}
+          >
+            <CloseIcon />
+          </button>
+        </div>
         <TabsList aria-label="Sections">
           {TAB_KEYS.map((key) => (
             <Tab key={key} value={key}>
@@ -71,9 +133,39 @@ export function DashboardShell({
   );
 }
 
+function BurgerIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6 18 18M18 6 6 18" />
+    </svg>
+  );
+}
+
 function Icon({ name }: { name: TabKey }) {
   const paths = {
-    today: (
+    home: (
       <>
         <path d="M3 11.5 12 4l9 7.5" />
         <path d="M5.5 10v10h13V10" />
