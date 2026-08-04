@@ -113,11 +113,21 @@ async function refresh(): Promise<boolean> {
   try {
     const headers: Record<string, string> = {};
     if (manifest) headers["if-none-match"] = `W/"${manifest.revision}"`;
-    const response = await fetch("/api/manifest", {
+    let response = await fetch("/api/manifest", {
       credentials: "same-origin",
       cache: "no-store",
       headers,
     });
+    if (response.status === 304 && !manifest) {
+      // We sent no validator, so this 304 is old WebKit answering from its
+      // own HTTP cache (iOS 12 ignores no-store and leaks the 304 to JS).
+      // With nothing saved to show, force a full response from a URL that
+      // cannot have a cache entry.
+      response = await fetch(`/api/manifest?fresh=${Date.now()}`, {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+    }
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
