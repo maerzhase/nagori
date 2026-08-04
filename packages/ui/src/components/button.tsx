@@ -6,18 +6,23 @@ import type { ComponentPropsWithoutRef, JSX, ReactNode } from "react";
 import { cn } from "../lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60",
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border font-semibold transition-[background-color,transform,color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-60",
   {
     variants: {
       variant: {
+        // `coral-strong`, not `coral`: the plain accent carries a small bold
+        // label at only 3.48:1. See packages/ui/tests/contrast.test.ts.
         primary:
-          "border-foreground bg-foreground text-background hover:opacity-90",
-        secondary: "border-input bg-background text-foreground hover:bg-muted",
+          "border-transparent bg-coral-strong text-on-strong hover:bg-coral-strong-hover hover:not-disabled:-translate-y-px",
+        secondary:
+          "border-foreground bg-foreground text-on-strong hover:opacity-90",
+        outline: "border-input bg-card text-foreground hover:bg-muted",
+        text: "rounded-none border-0 border-b border-b-input bg-transparent px-0 py-0.5 font-medium text-muted-foreground hover:text-foreground",
       },
       size: {
-        default: "h-10",
-        sm: "h-9 px-3 text-xs",
-        lg: "h-11 px-6",
+        default: "min-h-11 px-4 py-2.5 text-sm",
+        sm: "min-h-9 px-3 py-1.5 text-xs",
+        lg: "min-h-12 px-6 py-3 text-base",
       },
     },
     defaultVariants: {
@@ -52,3 +57,5 @@ export function Button({
     </BaseButton>
   );
 }
+
+export { buttonVariants };

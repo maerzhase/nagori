@@ -2,7 +2,6 @@
   "name": "@nagori/ui",
   "description": "Shared Nagori design tokens and interface components.",
   "version": "0.1.0",
-  "private": true,
   "dependencies": {
     "@base-ui/react": "1.6.0",
     "class-variance-authority": "0.7.1",
@@ -50,6 +49,7 @@
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
+  "private": true,
   "scripts": {
     "build": "tsdown && tailwindcss -i src/styles/styles.css -o dist/styles.css --minify",
     "build-storybook": "storybook build",

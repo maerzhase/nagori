@@ -11,6 +11,9 @@
   --color-paper: var(--memory-paper);
   --color-ink: var(--memory-ink);
   --color-coral: var(--memory-coral);
+  --color-coral-strong: var(--memory-coral-strong);
+  --color-coral-strong-hover: var(--memory-coral-strong-hover);
+  --color-on-strong: var(--memory-ink-on-night);
   --color-garden: var(--memory-garden);
   --color-danger: var(--danger);
   --color-danger-surface: var(--danger-surface);
