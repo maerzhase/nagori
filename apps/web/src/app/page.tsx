@@ -1,4 +1,8 @@
-import { ACTIVE_SLIDE_WARNING, scheduleStatus } from "@nagori/core";
+import {
+  ACTIVE_SLIDE_WARNING,
+  MINIMUM_PASSWORD_LENGTH,
+  scheduleStatus,
+} from "@nagori/core";
 import { Button, Field, Input, SlidePreview } from "@nagori/ui";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
@@ -85,7 +89,7 @@ function AuthShell({
                   ? "Too many attempts. Please wait 15 minutes and try again."
                   : error === "owner_email"
                     ? "Setup is reserved for this deployment’s configured owner email."
-                    : "Please check the details and use a password with at least 12 characters."}
+                    : `Please check the details and use a password with at least ${MINIMUM_PASSWORD_LENGTH} characters.`}
             </div>
           )}
           <form
@@ -115,9 +119,9 @@ function AuthShell({
                 name="password"
                 type="password"
                 // Only when creating one. On sign-in the password already
-                // exists, so a minimum here just refuses to submit a password
-                // the server would have accepted.
-                minLength={setup ? 12 : undefined}
+                // exists, so a minimum here could only refuse to submit one the
+                // server would have accepted.
+                minLength={setup ? MINIMUM_PASSWORD_LENGTH : undefined}
                 autoComplete={setup ? "new-password" : "current-password"}
                 required
               />

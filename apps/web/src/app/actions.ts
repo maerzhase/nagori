@@ -4,9 +4,9 @@ import {
   clampDisplaySeconds,
   defaultSchedule,
   hashPassword,
-  isStrongEnoughPassword,
   isFitMode,
   isFocalPoint,
+  isStrongEnoughPassword,
   normalizeEmail,
   type PairingSecrets,
 } from "@nagori/core";

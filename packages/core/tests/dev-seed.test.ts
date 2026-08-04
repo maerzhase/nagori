@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { verifyPassword } from "../src/security";
+import { isStrongEnoughPassword, verifyPassword } from "../src/security";
 
 /**
  * The dev fixture stores a precomputed PBKDF2 hash, because a salted hash is
@@ -34,6 +34,13 @@ describe("dev seed credentials", () => {
     await expect(verifyPassword(`${password}x`, salt, hash)).resolves.toBe(
       false,
     );
+  });
+
+  it("meets the app's own minimum, so setup would accept it too", () => {
+    // Keeps the fixture credential honest: if the minimum ever rises above the
+    // seed password's length, this fails rather than leaving a dev account that
+    // the real signup flow would reject.
+    expect(isStrongEnoughPassword(password)).toBe(true);
   });
 
   it("stores the hash and salt the SQL inserts", () => {

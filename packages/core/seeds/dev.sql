@@ -10,10 +10,10 @@
 -- PBKDF2 parameters are implicit in the stored hash, so if they ever change that
 -- test fails rather than dev login quietly breaking.
 --
--- The password is deliberately trivial and shorter than the app's own 12
--- character minimum, which is fine here because the seed writes the hash
--- directly rather than going through setup. It is the one credential nobody
--- should have to remember, and it never leaves a local database.
+-- The password is deliberately trivial. It is the one credential nobody should
+-- have to remember, it never leaves a local database, and at eight characters it
+-- still satisfies the app's own minimum — so this account is one the real signup
+-- flow would have accepted.
 --
 -- SEED_EMAIL: owner@nagori.test
 -- SEED_PASSWORD: password
