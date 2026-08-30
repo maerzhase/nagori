@@ -1,6 +1,8 @@
 // @ts-nocheck
 
 const CACHE_NAME = "nagori-media-v1";
+const CAPABILITY_CACHE_NAME = "nagori-capabilities-v1";
+const AUTOMATIC_UPDATES_MARKER = "/__nagori/automatic-updates";
 const MAX_MEDIA_ENTRIES = 30;
 
 self.addEventListener("install", (event) => {
@@ -9,16 +11,51 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key.startsWith("nagori-") && key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
+    Promise.all([
+      caches.keys(),
+      caches
+        .open(CAPABILITY_CACHE_NAME)
+        .then((cache) => cache.match(AUTOMATIC_UPDATES_MARKER)),
+    ]).then(async (results) => {
+      const keys = results[0];
+      const automaticUpdates = results[1];
+      await Promise.all(
+        keys
+          .filter(
+            (key) =>
+              key.startsWith("nagori-") &&
+              key !== CACHE_NAME &&
+              key !== CAPABILITY_CACHE_NAME,
+          )
+          .map((key) => caches.delete(key)),
+      );
+      await self.clients.claim();
+      if (automaticUpdates) return;
+
+      // This deploy may be taking over a viewer bundle from before automatic
+      // updates existed. That old page cannot react to controllerchange, so
+      // navigate it once to bootstrap the new updater without device access.
+      const windows = await self.clients.matchAll({
+        includeUncontrolled: true,
+        type: "window",
+      });
+      await Promise.all(
+        windows.map((client) =>
+          "navigate" in client
+            ? client.navigate(client.url)
+            : Promise.resolve(),
         ),
-      )
-      .then(() => self.clients.claim()),
+      );
+    }),
+  );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== "NAGORI_AUTOMATIC_UPDATES") return;
+  event.waitUntil(
+    caches
+      .open(CAPABILITY_CACHE_NAME)
+      .then((cache) => cache.put(AUTOMATIC_UPDATES_MARKER, new Response("1"))),
   );
 });
 
