@@ -58,6 +58,18 @@ Then add six `production` environment secrets to the GitHub repository:
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit on the account, plus DNS edit on the zone so the deploy can create the custom-domain records. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
+The installed viewer checks for a new application release every 15 minutes, as
+well as whenever it comes online or returns to the foreground. A deployed
+service worker takes control immediately and reloads the viewer once, so no one
+needs to visit the device to accept an update. This updates an already running
+viewer; iOS still cannot automatically relaunch a Home Screen web app after the
+device itself reboots.
+
+The one-time rollout from a viewer built before this updater can take up to the
+browser's normal 24-hour service-worker refresh window. Its existing manifest
+and media requests keep generating the events that trigger that check; once the
+new worker is found, it navigates the old viewer into the automatic-update path.
+
 Each worker config declares a Cloudflare custom domain: the dashboard serves `nagori.m3000.io` ([apps/web/wrangler.jsonc](apps/web/wrangler.jsonc)) and the frame serves `nagori-frame.m3000.io` ([apps/frame/wrangler.jsonc](apps/frame/wrangler.jsonc)). The first deploy creates the proxied DNS records automatically, so the zone must live in the same Cloudflare account as the workers. Change both `routes` and the matching `APP_URL`/`FRAME_URL` together to move to different hostnames.
 
 The checked-in configs use a placeholder D1 ID by design; the workflow injects the production ID without committing it.

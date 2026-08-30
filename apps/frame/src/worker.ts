@@ -32,6 +32,24 @@ function secure(response: Response): Response {
   return new Response(response.body, { status: response.status, headers });
 }
 
+function updateableAsset(response: Response, pathname: string): Response {
+  const headers = new Headers(response.headers);
+  // A kiosk may stay open for months. Every app-shell request must validate
+  // against the current deployment when online. stale-if-error keeps the old
+  // shell available to WebKit's HTTP cache during an offline restart.
+  headers.set("cache-control", "max-age=0, stale-if-error=31536000");
+  if (pathname === "/sw.js") {
+    // The updater itself must never be satisfied by a stale HTTP cache entry.
+    headers.set("cache-control", "no-cache, no-store, must-revalidate");
+    headers.set("service-worker-allowed", "/");
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 async function authenticatedDevice(request: Request, store: NagoriStore) {
   const token = cookieValue(request, "frame_session");
   return token ? store.findDevice(token) : null;
@@ -143,6 +161,8 @@ export default {
 
     if (url.pathname.startsWith("/api/"))
       return secure(json({ error: "not_found" }, { status: 404 }));
-    return secure(await env.ASSETS.fetch(request));
+    return secure(
+      updateableAsset(await env.ASSETS.fetch(request), url.pathname),
+    );
   },
 };

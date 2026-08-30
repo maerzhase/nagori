@@ -1,3 +1,5 @@
+import { startAutomaticUpdates } from "./automatic-updates";
+
 interface Slide {
   id: string;
   kind: "photo" | "message";
@@ -274,7 +276,7 @@ if (manifest) {
   renderCurrent();
 }
 if ("serviceWorker" in navigator) {
-  void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  startAutomaticUpdates(navigator.serviceWorker, document, window);
 }
 void refresh();
 window.setInterval(refresh, 60_000);
