@@ -253,6 +253,12 @@ Modern dashboard Worker                   Legacy frame Worker
 | 004 | Build the resilient old-iPad viewer PWA | P1 | L | 002, 003 | TODO |
 | 005 | Complete slideshow lifecycle, messages, and scheduling UI | P1 | L | 003, 004 | TODO |
 | 006 | Harden, observe, document, and release the MVP | P1 | M | 001–005 | TODO |
+| [008](008-viewer-typography-and-progress.md) | Unify typography and add compact viewer progress | P2 | M | Current implemented viewer | IN PROGRESS — implementation approved at `b55728b`; physical iPad acceptance pending |
+
+Plan 008 was added on 2026-09-06 against `2e86723` for the existing application.
+It can be executed independently of the historical MVP status rows above;
+those rows have not been re-audited. It covers shared Inter loading, Safari 12
+text sizing, and a vanilla slideshow progress pill with verification gates.
 
 ## Dependency notes
 
