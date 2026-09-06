@@ -1,4 +1,6 @@
 import { startAutomaticUpdates } from "./automatic-updates";
+import { loadPhoto } from "./photo-load";
+import { createSlideshow } from "./slideshow";
 
 interface Slide {
   id: string;
@@ -34,9 +36,8 @@ const images = [
   document.getElementById("photo-b") as HTMLImageElement,
 ];
 let manifest: Manifest | null = null;
-let current = 0;
 let activeImage = 0;
-let timer = 0;
+let refreshVersion = 0;
 
 function showOnly(element: HTMLElement) {
   pairing.hidden = element !== pairing;
@@ -44,43 +45,67 @@ function showOnly(element: HTMLElement) {
   slideElement.hidden = element !== slideElement;
 }
 
+const slideshow = createSlideshow(
+  {
+    now: () => performance.now(),
+    setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+    clearTimeout: (id) => window.clearTimeout(id),
+  },
+  {
+    unavailable() {
+      showOnly(empty);
+    },
+    prepare(index, ready, fail) {
+      const value = manifest;
+      const item = value?.slides[index];
+      if (!value || !item) {
+        fail();
+        return () => {};
+      }
+      const commitCaption = () => {
+        showOnly(slideElement);
+        caption.hidden = !value.settings.showCaptions || !item.caption;
+        caption.textContent = item.caption || "";
+      };
+      if (item.kind === "message") {
+        ready(() => {
+          images[0].className = "photo";
+          images[1].className = "photo";
+          message.hidden = false;
+          message.textContent = item.message || "";
+          message.dataset.theme = item.theme;
+          commitCaption();
+        });
+        return () => {};
+      }
+      const nextImageIndex = 1 - activeImage;
+      const nextImage = images[nextImageIndex];
+      nextImage.style.objectFit = item.fitMode || value.settings.fitMode;
+      nextImage.style.objectPosition =
+        item.focalPoint || value.settings.focalPoint || "center";
+      return loadPhoto(
+        nextImage,
+        item.mediaUrl || "",
+        () =>
+          ready(() => {
+            images[activeImage].className = "photo";
+            nextImage.className = "photo active";
+            activeImage = nextImageIndex;
+            message.hidden = true;
+            commitCaption();
+          }),
+        fail,
+      );
+    },
+  },
+);
+slideshow.setPaused(document.hidden);
+
 function renderCurrent() {
-  if (!manifest || manifest.slides.length === 0) {
-    showOnly(empty);
-    return;
-  }
-  showOnly(slideElement);
-  const item = manifest.slides[current % manifest.slides.length];
-  caption.hidden = !manifest.settings.showCaptions || !item.caption;
-  caption.textContent = item.caption || "";
-  if (item.kind === "message") {
-    images[0].className = "photo";
-    images[1].className = "photo";
-    message.hidden = false;
-    message.textContent = item.message || "";
-    message.dataset.theme = item.theme;
-  } else {
-    message.hidden = true;
-    const nextImage = images[1 - activeImage];
-    // A slide's own choice wins; the household setting is the fallback.
-    nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
-    nextImage.style.objectPosition =
-      item.focalPoint || manifest.settings.focalPoint || "center";
-    nextImage.src = item.mediaUrl || "";
-    nextImage.onload = () => {
-      images[activeImage].className = "photo";
-      nextImage.className = "photo active";
-      activeImage = 1 - activeImage;
-    };
-  }
-  window.clearTimeout(timer);
-  const displaySeconds = manifest.settings.displaySeconds;
-  timer = window.setTimeout(() => {
-    const currentManifest = manifest;
-    if (!currentManifest || currentManifest.slides.length === 0) return;
-    current = (current + 1) % currentManifest.slides.length;
-    renderCurrent();
-  }, displaySeconds * 1000);
+  slideshow.replace(
+    manifest?.slides.length || 0,
+    manifest?.settings.displaySeconds || 12,
+  );
 }
 
 function saveManifest(value: Manifest) {
@@ -112,6 +137,7 @@ function warmPhotos(value: Manifest) {
 
 /** Resolves false when this frame has no usable device session. */
 async function refresh(): Promise<boolean> {
+  const version = ++refreshVersion;
   try {
     const headers: Record<string, string> = {};
     if (manifest) headers["if-none-match"] = `W/"${manifest.revision}"`;
@@ -130,10 +156,11 @@ async function refresh(): Promise<boolean> {
         cache: "no-store",
       });
     }
+    if (version !== refreshVersion) return false;
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
-      window.clearTimeout(timer);
+      slideshow.stop();
       showOnly(pairing);
       return false;
     }
@@ -146,11 +173,11 @@ async function refresh(): Promise<boolean> {
     }
     if (!response.ok) throw new Error("manifest unavailable");
     const next = (await response.json()) as Manifest;
+    if (version !== refreshVersion) return false;
     connection.hidden = true;
     const changed = !manifest || next.revision !== manifest.revision;
     if (changed) {
       manifest = next;
-      current = 0;
       saveManifest(next);
       warmPhotos(next);
     }
@@ -158,6 +185,7 @@ async function refresh(): Promise<boolean> {
     if (changed || !pairing.hidden) renderCurrent();
     return true;
   } catch (_error) {
+    if (version !== refreshVersion) return false;
     connection.hidden = false;
     if (!manifest) {
       manifest = loadSavedManifest();
@@ -280,6 +308,10 @@ if ("serviceWorker" in navigator) {
 }
 void refresh();
 window.setInterval(refresh, 60_000);
-document.addEventListener("visibilitychange", () => {
+function resumeViewer() {
+  slideshow.setPaused(document.hidden);
   if (!document.hidden) void refresh();
-});
+}
+document.addEventListener("visibilitychange", resumeViewer);
+window.addEventListener("pagehide", () => slideshow.setPaused(true));
+window.addEventListener("pageshow", resumeViewer);
