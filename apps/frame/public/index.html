@@ -47,6 +47,42 @@
       <span class="gallery-track" aria-hidden="true"><span id="gallery-fill" class="gallery-fill"></span></span>
       <button id="gallery-toggle" class="gallery-toggle" type="button" aria-label="Pause slideshow">Ⅱ</button>
     </aside>
+    <button id="sleep-toggle" class="sleep-toggle" type="button" aria-label="Switch off the screen" hidden>☾</button>
+    <button id="sleep" class="sleep" type="button" aria-label="Switch the screen back on" hidden>
+      <svg class="sleep-scene" viewBox="0 0 320 280" width="320" height="280" aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="sleep-halftone" width="3.5" height="3.5" patternUnits="userSpaceOnUse">
+            <circle cx="1.5" cy="1.5" r="0.7" fill="#6b635a" />
+          </pattern>
+        </defs>
+        <path class="sleep-frame-shadow" d="M49 43H290V196H49Z" />
+        <path class="sleep-frame" d="M53 31C106 29 213 31 266 30Q281 30 281 44L282 174Q282 187 267 188L53 187Q39 188 39 174L38 45Q38 31 53 31Z" />
+        <path class="sleep-screen" d="M49 42L270 41L271 175L50 176Z" />
+        <path class="sleep-screen-dots" d="M50 122L270 65V175H50Z" />
+        <path class="sleep-frame-glint" d="M57 35h47m5 0h13M44 50v27" />
+        <path class="sleep-bezel-shade" d="M39 169L50 176H271V42L281 45V174Q282 187 267 188H53Q40 188 39 178Z" />
+        <path class="sleep-screen-reflection" d="M54 47H103L54 96ZM112 47h9l-67 67v-10Z" />
+        <path class="sleep-print-lines" d="M54 181h39m-34 3h26m153-146h28m-20-3h14M284 65v40m0 7v12m-1 44v17m-8 7h-31" />
+        <g class="sleep-touch sleep-touch-a">
+          <path class="sleep-touch-marks" transform="translate(101 76)" d="M-16-5Q-21-6-24-10Q-19-9-15-7Z M-5-15Q-8-20-7-25Q-5-21-3-16Z M9-14Q12-20 17-22Q15-17 11-13Z" />
+        </g>
+        <g class="sleep-touch sleep-touch-b">
+          <path class="sleep-touch-marks" transform="translate(198 116)" d="M-16-5Q-21-6-24-10Q-19-9-15-7Z M-5-15Q-8-20-7-25Q-5-21-3-16Z M9-14Q12-20 17-22Q15-17 11-13Z" />
+        </g>
+        <g class="sleep-hand">
+          <path class="sleep-hand-shape" d="M167 225C165 212 158 202 149 193L131 176C126 171 127 166 131 165C136 163 142 171 150 175L149 133C148 125 150 120 155 120C161 119 163 124 163 131L165 157C170 153 177 155 181 161C187 158 194 163 196 169C203 167 210 173 210 181C210 193 206 202 201 211L199 225Z" />
+          <path class="sleep-hand-shadow" d="M201 180Q208 177 205 191C203 202 195 210 195 223L183 224Q179 217 185 212C198 202 202 192 201 180Z" />
+          <path class="sleep-hand-dots" d="M152 158L160 167L163 183L181 202L170 207L151 186Z" />
+          <path class="sleep-hand-detail" d="M152 130v-3q3-5 7 0v3m-7 13 8-1m6 16 3 15m12-11 2 14m13-6 1 10M147 181Q159 185 165 196M174 185q9 3 12 11" />
+          <path class="sleep-hand-hatch" d="M133 171l8 7m-8-3 8 7m14 13 7 9m-3-10 7 11m-3-9 7 11m32-22-4 11m7-9-4 13" />
+          <path class="sleep-cuff" d="M165 221Q183 224 202 221L203 236Q184 240 165 236Z" />
+          <path class="sleep-cloth-shadow" d="M166 225L175 226L183 234L190 225L200 224L197 236L184 239L167 236Z" />
+          <path class="sleep-cloth-light" d="M169 223l11 3 5 8m4-2 6-6" />
+          <path class="sleep-cuff-detail" d="M170 228l10 1m6 0 10-1m-27 5 28 1" />
+        </g>
+      </svg>
+      <span class="sleep-hint">Tap anywhere to switch on</span>
+    </button>
     <script src="/viewer.js"></script>
   </body>
 </html>

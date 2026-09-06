@@ -292,6 +292,274 @@ button {
   outline: 2px solid #f8f3eb;
   outline-offset: 1px;
 }
+/*
+ * "Switching off" for a kiosk-locked iPad: the screen cannot be turned off,
+ * so the app goes black itself. The button shares the progress pill's look
+ * at the same 48px height so the two read as one row; waking is a tap
+ * anywhere, and the hint fades so a dark room stays dark.
+ */
+.sleep-toggle {
+  position: fixed;
+  z-index: 5;
+  right: 16px;
+  bottom: 16px;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: Safari 12 fallback before env(). */
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(248, 243, 235, 0.22);
+  border-radius: 50%;
+  background: rgba(23, 21, 18, 0.88);
+  color: #f8f3eb;
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 46px;
+}
+.sleep-toggle:focus {
+  outline: 2px solid #f8f3eb;
+  outline-offset: 1px;
+}
+.sleep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  color: rgba(248, 243, 235, 0.55);
+  font-family: var(--nagori-font-sans);
+  font-size: 22px;
+}
+/* Soft printed illustration in Nagori paper, ink, and garden tones. */
+.sleep:not([hidden]) {
+  animation: sleep-entry 650ms ease-out both;
+}
+.sleep-scene {
+  display: block;
+  width: 300px;
+  max-width: 76vw;
+  height: auto;
+  max-height: 62vh;
+  margin-bottom: 18px;
+  animation: sleep-scene 6s ease both;
+}
+.sleep-frame-shadow {
+  fill: #29251f;
+}
+.sleep-frame {
+  fill: #eee5d8;
+  stroke: #6b635a;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.sleep-screen {
+  fill: #25231f;
+  stroke: #6b635a;
+  stroke-width: 1.5;
+}
+.sleep-screen-dots {
+  fill: url(#sleep-halftone);
+  opacity: 0.2;
+}
+.sleep-frame-glint {
+  fill: none;
+  stroke: #fffdf9;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.sleep-hand {
+  animation: sleep-tap 6s ease-in-out both;
+}
+.sleep-hand-shape {
+  fill: #eee5d8;
+  stroke: #29251f;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sleep-hand-shadow {
+  fill: #c7b7a1;
+}
+.sleep-hand-dots {
+  fill: url(#sleep-halftone);
+  opacity: 0.35;
+}
+.sleep-hand-detail,
+.sleep-hand-hatch {
+  fill: none;
+  stroke: #6b635a;
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sleep-hand-hatch {
+  stroke-width: 0.65;
+  opacity: 0.6;
+}
+.sleep-cuff {
+  fill: #365d4b;
+  stroke: #29251f;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.sleep-cuff-detail {
+  fill: none;
+  stroke: #25231f;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.sleep-bezel-shade {
+  fill: #b5a997;
+}
+.sleep-screen-reflection {
+  fill: #918980;
+  opacity: 0.1;
+}
+.sleep-print-lines {
+  fill: none;
+  stroke: #6b635a;
+  stroke-width: 0.65;
+  opacity: 0.5;
+  stroke-linecap: round;
+}
+.sleep-cloth-shadow {
+  fill: #2b493c;
+}
+.sleep-cloth-light {
+  fill: none;
+  stroke: #698674;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.sleep-touch-marks {
+  fill: #c7b7a1;
+  opacity: 0.85;
+}
+.sleep-touch {
+  animation: sleep-touch 6s ease both;
+}
+.sleep-touch-b {
+  animation-name: sleep-touch-later;
+}
+.sleep-hint {
+  display: block;
+  padding: 0 24px;
+  font-size: 20px;
+  line-height: 1.5;
+  animation: sleep-hint 6s ease both;
+}
+@keyframes sleep-entry {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sleep-scene {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sleep-tap {
+  0%,
+  12% {
+    opacity: 0;
+    transform: translate(-55px, -20px);
+  }
+  23% {
+    opacity: 1;
+    transform: translate(-55px, -56px);
+  }
+  29%,
+  33% {
+    opacity: 1;
+    transform: translate(-55px, -46px);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-55px, -56px);
+  }
+  51% {
+    opacity: 1;
+    transform: translate(42px, -16px);
+  }
+  57%,
+  61% {
+    opacity: 1;
+    transform: translate(42px, -6px);
+  }
+  72%,
+  100% {
+    opacity: 0;
+    transform: translate(42px, 18px);
+  }
+}
+@keyframes sleep-touch {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  30%,
+  34% {
+    opacity: 1;
+  }
+  44%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sleep-touch-later {
+  0%,
+  54% {
+    opacity: 0;
+  }
+  58%,
+  62% {
+    opacity: 1;
+  }
+  72%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sleep-hint {
+  0% {
+    opacity: 0;
+  }
+  22%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sleep-dismiss {
+  to {
+    opacity: 0;
+  }
+}
 @media (min-width: 600px) {
   .caption {
     font-size: 32px;
@@ -328,5 +596,17 @@ button {
   }
   .gallery-track {
     display: none;
+  }
+  .sleep:not([hidden]),
+  .sleep-hand,
+  .sleep-touch {
+    animation: none;
+  }
+  .sleep-hand {
+    transform: translate(-55px, -46px);
+  }
+  .sleep-hint,
+  .sleep-scene {
+    animation: sleep-dismiss 1ms step-end 6s forwards;
   }
 }

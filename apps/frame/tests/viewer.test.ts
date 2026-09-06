@@ -58,6 +58,8 @@ function harness(savedManifest = manifest) {
     "gallery-counter",
     "gallery-fill",
     "gallery-toggle",
+    "sleep-toggle",
+    "sleep",
     "photo-a",
     "photo-b",
     "pair-form",
