@@ -1,4 +1,5 @@
 import { startAutomaticUpdates } from "./automatic-updates";
+import { loadPhoto } from "./photo-load";
 import {
   commitSlideDwell,
   createSlideshowController,
@@ -52,6 +53,8 @@ let retryTimer = 0;
 let skipTimer = 0;
 let failedInPass = 0;
 let manuallyPaused = false;
+let refreshVersion = 0;
+let cancelPhotoLoad = () => {};
 
 const playback = createSlideshowController(
   {
@@ -86,6 +89,8 @@ function showOnly(element: HTMLElement) {
 function clearLoad() {
   window.clearTimeout(loadTimer);
   loadTimer = 0;
+  cancelPhotoLoad();
+  cancelPhotoLoad = () => {};
   for (const image of images) {
     image.onload = null;
     image.onerror = null;
@@ -171,7 +176,7 @@ function renderCurrent() {
     nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
     nextImage.style.objectPosition =
       item.focalPoint || manifest.settings.focalPoint || "center";
-    nextImage.onload = guardedCallback(generation, playback.isCurrent, () => {
+    const loaded = guardedCallback(generation, playback.isCurrent, () => {
       window.clearTimeout(loadTimer);
       message.hidden = true;
       images[activeImage].className = "photo";
@@ -216,9 +221,8 @@ function renderCurrent() {
         0,
       );
     };
-    nextImage.onerror = failed;
     loadTimer = window.setTimeout(failed, 10_000);
-    nextImage.src = item.mediaUrl || "";
+    cancelPhotoLoad = loadPhoto(nextImage, item.mediaUrl || "", loaded, failed);
   }
 }
 
@@ -251,6 +255,7 @@ function warmPhotos(value: Manifest) {
 
 /** Resolves false when this frame has no usable device session. */
 async function refresh(): Promise<boolean> {
+  const version = ++refreshVersion;
   try {
     const headers: Record<string, string> = {};
     if (manifest) headers["if-none-match"] = `W/"${manifest.revision}"`;
@@ -269,6 +274,7 @@ async function refresh(): Promise<boolean> {
         cache: "no-store",
       });
     }
+    if (version !== refreshVersion) return false;
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
@@ -285,6 +291,7 @@ async function refresh(): Promise<boolean> {
     }
     if (!response.ok) throw new Error("manifest unavailable");
     const next = (await response.json()) as Manifest;
+    if (version !== refreshVersion) return false;
     connection.hidden = true;
     const changed = revisionChanged(manifest?.revision ?? null, next.revision);
     if (changed) {
@@ -298,6 +305,7 @@ async function refresh(): Promise<boolean> {
     if (changed || !pairing.hidden) renderCurrent();
     return true;
   } catch (_error) {
+    if (version !== refreshVersion) return false;
     connection.hidden = false;
     if (!manifest) {
       manifest = loadSavedManifest();
