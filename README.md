@@ -58,7 +58,7 @@ Then add six `production` environment secrets to the GitHub repository:
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit on the account, plus DNS edit on the zone so the deploy can create the custom-domain records. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
-The installed viewer checks for a new application release every 15 minutes, as
+The installed viewer checks for a new application release every 60 seconds, as
 well as whenever it comes online or returns to the foreground. A deployed
 service worker takes control immediately and reloads the viewer once, so no one
 needs to visit the device to accept an update. This updates an already running
@@ -89,7 +89,7 @@ If a frame is lost, revoke it from **Connected frames**. The next manifest or ph
 
 ## Compatibility
 
-The frame is designed around the original iPad Air’s iOS 12.5.7 baseline: plain DOM APIs, an ES2017/Safari 12 bundle, system fonts, and no optional viewer framework. Its generated CSS uses shared Tailwind design tokens but all critical viewer rules remain ordinary CSS outside Tailwind cascade layers, which older Safari ignores.
+The frame is designed around the original iPad Air’s iOS 12.5.7 baseline: plain DOM APIs, an ES2017/Safari 12 bundle, and no optional viewer framework. The dashboard, component library, and frame self-host Inter for interface text, with system sans fallbacks for unsupported glyphs; editorial headings, captions, and notes use Georgia with Times New Roman as a fallback. Its generated CSS uses shared Tailwind design tokens but all critical viewer rules remain ordinary CSS outside Tailwind cascade layers, which older Safari ignores.
 
 ### Physical iPad acceptance checklist
 

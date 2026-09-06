@@ -1,6 +1,12 @@
 import { startAutomaticUpdates } from "./automatic-updates";
 import { loadPhoto } from "./photo-load";
-import { createSlideshow } from "./slideshow";
+import {
+  commitSlideDwell,
+  createSlideshowController,
+  guardedCallback,
+  guardedDeferred,
+  revisionChanged,
+} from "./slideshow";
 
 interface Slide {
   id: string;
@@ -31,81 +37,193 @@ const slideElement = document.getElementById("slide") as HTMLElement;
 const caption = document.getElementById("caption") as HTMLElement;
 const message = document.getElementById("message") as HTMLElement;
 const connection = document.getElementById("connection") as HTMLElement;
+const progress = document.getElementById("gallery-progress") as HTMLElement;
+const counter = document.getElementById("gallery-counter") as HTMLElement;
+const fill = document.getElementById("gallery-fill") as HTMLElement;
+const toggle = document.getElementById("gallery-toggle") as HTMLButtonElement;
 const images = [
   document.getElementById("photo-a") as HTMLImageElement,
   document.getElementById("photo-b") as HTMLImageElement,
 ];
 let manifest: Manifest | null = null;
+let current = 0;
 let activeImage = 0;
+let loadTimer = 0;
+let retryTimer = 0;
+let skipTimer = 0;
+let failedInPass = 0;
+let manuallyPaused = false;
 let refreshVersion = 0;
+let cancelPhotoLoad = () => {};
+
+const playback = createSlideshowController(
+  {
+    now: () => Date.now(),
+    setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+    clearTimeout: (id) => window.clearTimeout(id),
+  },
+  () => {
+    if (!manifest?.slides.length) return;
+    current = (current + 1) % manifest.slides.length;
+    renderCurrent();
+  },
+  (state) => {
+    fill.style.transition = "none";
+    const start = state.duration ? 1 - state.remaining / state.duration : 0;
+    fill.style.transform = `scaleX(${Math.max(0, Math.min(1, start))})`;
+    if (!state.paused && state.remaining > 0) {
+      void fill.offsetWidth;
+      fill.style.transition = `transform ${state.remaining}ms linear`;
+      fill.style.transform = "scaleX(1)";
+    }
+  },
+);
 
 function showOnly(element: HTMLElement) {
   pairing.hidden = element !== pairing;
   empty.hidden = element !== empty;
   slideElement.hidden = element !== slideElement;
+  if (element !== slideElement) progress.hidden = true;
 }
 
-const slideshow = createSlideshow(
-  {
-    now: () => performance.now(),
-    setTimeout: (callback, delay) => window.setTimeout(callback, delay),
-    clearTimeout: (id) => window.clearTimeout(id),
-  },
-  {
-    unavailable() {
-      showOnly(empty);
-    },
-    prepare(index, ready, fail) {
-      const value = manifest;
-      const item = value?.slides[index];
-      if (!value || !item) {
-        fail();
-        return () => {};
-      }
-      const commitCaption = () => {
-        showOnly(slideElement);
-        caption.hidden = !value.settings.showCaptions || !item.caption;
-        caption.textContent = item.caption || "";
-      };
-      if (item.kind === "message") {
-        ready(() => {
-          images[0].className = "photo";
-          images[1].className = "photo";
-          message.hidden = false;
-          message.textContent = item.message || "";
-          message.dataset.theme = item.theme;
-          commitCaption();
-        });
-        return () => {};
-      }
-      const nextImageIndex = 1 - activeImage;
-      const nextImage = images[nextImageIndex];
-      nextImage.style.objectFit = item.fitMode || value.settings.fitMode;
-      nextImage.style.objectPosition =
-        item.focalPoint || value.settings.focalPoint || "center";
-      return loadPhoto(
-        nextImage,
-        item.mediaUrl || "",
-        () =>
-          ready(() => {
-            images[activeImage].className = "photo";
-            nextImage.className = "photo active";
-            activeImage = nextImageIndex;
-            message.hidden = true;
-            commitCaption();
-          }),
-        fail,
-      );
-    },
-  },
-);
-slideshow.setPaused(document.hidden);
+function clearLoad() {
+  window.clearTimeout(loadTimer);
+  loadTimer = 0;
+  cancelPhotoLoad();
+  cancelPhotoLoad = () => {};
+  for (const image of images) {
+    image.onload = null;
+    image.onerror = null;
+  }
+}
+
+function cancelRendering() {
+  clearLoad();
+  window.clearTimeout(retryTimer);
+  window.clearTimeout(skipTimer);
+  retryTimer = 0;
+  skipTimer = 0;
+  playback.cancel();
+}
+
+function preferredSize(element: HTMLElement) {
+  if (element === caption)
+    return window.innerWidth < 600 ? 24 : window.innerWidth < 1000 ? 32 : 36;
+  return window.innerWidth < 600 ? 36 : window.innerWidth < 1000 ? 48 : 56;
+}
+
+function fitText(element: HTMLElement) {
+  const minimum =
+    element === caption
+      ? window.innerWidth < 600
+        ? 20
+        : 24
+      : window.innerWidth < 600
+        ? 18
+        : 24;
+  let size = preferredSize(element);
+  element.style.fontSize = `${size}px`;
+  for (
+    let attempts = 0;
+    attempts < 20 &&
+    size > minimum &&
+    (element.scrollHeight > element.clientHeight ||
+      element.scrollWidth > element.clientWidth);
+    attempts += 1
+  ) {
+    size = Math.max(minimum, size - 2);
+    element.style.fontSize = `${size}px`;
+  }
+}
+
+function commit(item: Slide) {
+  if (!manifest) return;
+  showOnly(slideElement);
+  caption.hidden =
+    !manifest.settings.showCaptions || !item.caption || item.kind === "message";
+  caption.textContent = item.caption || "";
+  counter.textContent = `${current + 1} / ${manifest.slides.length}`;
+  progress.hidden = manifest.slides.length <= 1;
+  failedInPass = 0;
+  if (!caption.hidden) fitText(caption);
+  if (!message.hidden) fitText(message);
+  commitSlideDwell(
+    playback,
+    manifest.slides.length,
+    manifest.settings.displaySeconds * 1000,
+  );
+}
 
 function renderCurrent() {
-  slideshow.replace(
-    manifest?.slides.length || 0,
-    manifest?.settings.displaySeconds || 12,
-  );
+  if (!manifest || manifest.slides.length === 0) {
+    cancelRendering();
+    showOnly(empty);
+    return;
+  }
+  const item = manifest.slides[current % manifest.slides.length];
+  const generation = playback.invalidate();
+  clearLoad();
+  if (item.kind === "message") {
+    images[0].className = "photo";
+    images[1].className = "photo";
+    message.hidden = false;
+    message.textContent = item.message || "";
+    message.dataset.theme = item.theme;
+    commit(item);
+  } else {
+    const nextImage = images[1 - activeImage];
+    // A slide's own choice wins; the household setting is the fallback.
+    nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
+    nextImage.style.objectPosition =
+      item.focalPoint || manifest.settings.focalPoint || "center";
+    const loaded = guardedCallback(generation, playback.isCurrent, () => {
+      window.clearTimeout(loadTimer);
+      message.hidden = true;
+      images[activeImage].className = "photo";
+      nextImage.className = "photo active";
+      activeImage = 1 - activeImage;
+      commit(item);
+    });
+    const failed = () => {
+      if (!playback.isCurrent(generation) || !manifest) return;
+      clearLoad();
+      failedInPass += 1;
+      if (failedInPass >= manifest.slides.length) {
+        playback.cancel();
+        showOnly(empty);
+        connection.hidden = false;
+        const retryGeneration = playback.invalidate();
+        retryTimer = guardedDeferred(
+          {
+            setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+            clearTimeout: (id) => window.clearTimeout(id),
+          },
+          retryGeneration,
+          (value) => playback.isCurrent(value),
+          () => {
+            failedInPass = 0;
+            renderCurrent();
+          },
+          60_000,
+        );
+        return;
+      }
+      current = (current + 1) % manifest.slides.length;
+      const skipGeneration = playback.invalidate();
+      skipTimer = guardedDeferred(
+        {
+          setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+          clearTimeout: (id) => window.clearTimeout(id),
+        },
+        skipGeneration,
+        (value) => playback.isCurrent(value),
+        renderCurrent,
+        0,
+      );
+    };
+    loadTimer = window.setTimeout(failed, 10_000);
+    cancelPhotoLoad = loadPhoto(nextImage, item.mediaUrl || "", loaded, failed);
+  }
 }
 
 function saveManifest(value: Manifest) {
@@ -160,7 +278,7 @@ async function refresh(): Promise<boolean> {
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
-      slideshow.stop();
+      cancelRendering();
       showOnly(pairing);
       return false;
     }
@@ -175,9 +293,11 @@ async function refresh(): Promise<boolean> {
     const next = (await response.json()) as Manifest;
     if (version !== refreshVersion) return false;
     connection.hidden = true;
-    const changed = !manifest || next.revision !== manifest.revision;
+    const changed = revisionChanged(manifest?.revision ?? null, next.revision);
     if (changed) {
+      cancelRendering();
       manifest = next;
+      current = 0;
       saveManifest(next);
       warmPhotos(next);
     }
@@ -251,6 +371,8 @@ async function pair(body: { code?: string; token?: string }) {
     error.textContent = `Connected, but this frame could not keep its session (${await sessionProbe()}). Allow cookies for this site, then ask for a new code.`;
     return false;
   }
+  playback.resume("manual");
+  manuallyPaused = false;
   return true;
 }
 
@@ -308,10 +430,33 @@ if ("serviceWorker" in navigator) {
 }
 void refresh();
 window.setInterval(refresh, 60_000);
-function resumeViewer() {
-  slideshow.setPaused(document.hidden);
-  if (!document.hidden) void refresh();
+toggle.addEventListener("click", () => {
+  manuallyPaused = !manuallyPaused;
+  if (!manuallyPaused) {
+    playback.resume("manual");
+    toggle.textContent = "Ⅱ";
+    toggle.setAttribute("aria-label", "Pause slideshow");
+  } else {
+    playback.pause("manual");
+    toggle.textContent = "▶";
+    toggle.setAttribute("aria-label", "Resume slideshow");
+  }
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    playback.pause("hidden");
+  } else {
+    playback.resume("hidden");
+    void refresh();
+  }
+});
+window.addEventListener("resize", () => {
+  if (!caption.hidden) fitText(caption);
+  if (!message.hidden) fitText(message);
+});
+if (document.fonts?.ready) {
+  void document.fonts.ready.then(() => {
+    if (!caption.hidden) fitText(caption);
+    if (!message.hidden) fitText(message);
+  });
 }
-document.addEventListener("visibilitychange", resumeViewer);
-window.addEventListener("pagehide", () => slideshow.setPaused(true));
-window.addEventListener("pageshow", resumeViewer);

@@ -16,6 +16,5 @@ export async function GET(
     "content-type": media.mediaType,
     "cache-control": "private, max-age=3600",
   });
-  object.writeHttpMetadata(headers);
   return new Response(object.body, { headers });
 }

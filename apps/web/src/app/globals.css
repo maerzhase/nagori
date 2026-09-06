@@ -16,9 +16,7 @@
   --accent-ink: var(--memory-accent-ink);
   color: var(--ink);
   background: var(--paper);
-  font-family:
-    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--nagori-font-sans);
 }
 * {
   box-sizing: border-box;
@@ -91,7 +89,7 @@ button {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  font-family: Georgia, serif;
+  font-family: var(--nagori-font-serif);
   font-size: 1.1rem;
 }
 .auth-copy {
@@ -101,9 +99,7 @@ button {
 .auth-copy h1 {
   max-width: 42rem;
   margin: 0 0 1.7rem;
-  font:
-    400 clamp(3rem, 6vw, 6.2rem) / 0.94 Georgia,
-    serif;
+  font: 400 clamp(3rem, 6vw, 6.2rem) / 0.94 var(--nagori-font-serif);
   letter-spacing: -0.045em;
 }
 .auth-copy h1 em {
@@ -131,9 +127,7 @@ button {
 }
 .auth-form-wrap h2 {
   margin: 0.2rem 0 0.8rem;
-  font:
-    400 2.4rem / 1.05 Georgia,
-    serif;
+  font: 400 2.4rem / 1.05 var(--nagori-font-serif);
 }
 .auth-form-wrap > p:not(.eyebrow, .auth-note) {
   color: var(--muted-foreground);
@@ -185,9 +179,7 @@ textarea::placeholder {
   align-items: center;
   gap: 0.75rem;
   padding: 0 0.4rem 2rem;
-  font:
-    600 1.05rem Georgia,
-    serif;
+  font: 600 1.05rem var(--nagori-font-serif);
 }
 /* The mobile app bar and drawer chrome. All hidden until the narrow layout
    takes over; on desktop the sidebar carries the brand and the tabs itself. */
@@ -338,9 +330,7 @@ textarea::placeholder {
 }
 .welcome h1 {
   margin: 0 0 0.55rem;
-  font:
-    400 clamp(2.6rem, 5vw, 4.8rem) / 1 Georgia,
-    serif;
+  font: 400 clamp(2.6rem, 5vw, 4.8rem) / 1 var(--nagori-font-serif);
   letter-spacing: -0.04em;
 }
 .welcome > div > p:last-child {
@@ -366,9 +356,7 @@ textarea::placeholder {
 .section-heading h2,
 .utility-section h2 {
   margin: 0;
-  font:
-    400 2.15rem / 1.1 Georgia,
-    serif;
+  font: 400 2.15rem / 1.1 var(--nagori-font-serif);
 }
 .composer-grid {
   display: grid;
@@ -581,9 +569,7 @@ textarea {
 .memory-meta h3 {
   margin: 0 0 0.2rem;
   overflow: hidden;
-  font:
-    500 1rem Georgia,
-    serif;
+  font: 500 1rem var(--nagori-font-serif);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -615,9 +601,7 @@ textarea {
 }
 .empty-library h3 {
   margin: 0.7rem 0 0.25rem;
-  font:
-    500 1.25rem Georgia,
-    serif;
+  font: 500 1.25rem var(--nagori-font-serif);
 }
 .empty-library p {
   max-width: 25rem;
@@ -637,9 +621,7 @@ textarea {
 }
 .schedule-group h3 {
   margin: 0 0 0.9rem;
-  font:
-    500 1rem Georgia,
-    serif;
+  font: 500 1rem var(--nagori-font-serif);
 }
 .schedule-list {
   display: grid;
@@ -664,9 +646,7 @@ textarea {
 .schedule-item strong {
   overflow: hidden;
   color: var(--ink);
-  font:
-    500 1rem Georgia,
-    serif;
+  font: 500 1rem var(--nagori-font-serif);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -784,9 +764,7 @@ textarea {
   margin: 0;
 }
 .invite-form h3 {
-  font:
-    500 1.2rem Georgia,
-    serif;
+  font: 500 1.2rem var(--nagori-font-serif);
 }
 .invite-form p {
   color: var(--muted-foreground);
@@ -861,9 +839,7 @@ textarea {
 }
 .join-card h1 {
   margin: 0;
-  font:
-    400 2.5rem / 1.05 Georgia,
-    serif;
+  font: 400 2.5rem / 1.05 var(--nagori-font-serif);
 }
 .join-card > p:not(.eyebrow) {
   color: var(--muted-foreground);
@@ -873,9 +849,7 @@ footer {
   border-top: 1px solid var(--line);
   padding: 1.5rem 0 0;
   color: var(--muted-foreground);
-  font:
-    400 0.68rem Georgia,
-    serif;
+  font: 400 0.68rem var(--nagori-font-serif);
 }
 footer span {
   padding: 0 0.5rem;

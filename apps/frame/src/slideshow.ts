@@ -1,135 +1,129 @@
-interface Clock {
+export interface SlideshowClock {
   now(): number;
   setTimeout(callback: () => void, delay: number): number;
   clearTimeout(id: number): void;
 }
 
-interface Playback {
-  /** Prepare without changing the visible slide; ready supplies its commit. */
-  prepare(
-    index: number,
-    ready: (commit: () => void) => void,
-    fail: () => void,
-  ): () => void;
-  unavailable(): void;
+export interface SlideshowState {
+  duration: number;
+  remaining: number;
+  paused: boolean;
+  generation: number;
 }
 
-/** Owns loading and dwell deadlines; every asynchronous callback is cancellable. */
-export function createSlideshow(clock: Clock, playback: Playback) {
-  let count = 0;
-  let duration = 12_000;
-  let index = 0;
-  let failures = 0;
-  let generation = 0;
+export function createSlideshowController(
+  clock: SlideshowClock,
+  onAdvance: () => void,
+  onState: (state: SlideshowState) => void,
+) {
   let timer = 0;
-  let timerVersion = 0;
-  let cancelLoad = () => {};
-  let paused = false;
+  let duration = 0;
   let remaining = 0;
   let deadline = 0;
-  let action: (() => void) | null = null;
+  let generation = 0;
+  const pauses = new Set<string>();
 
-  function cancel() {
-    generation++;
-    timerVersion++;
-    clock.clearTimeout(timer);
-    cancelLoad();
-    cancelLoad = () => {};
-    action = null;
+  function clear() {
+    if (timer) clock.clearTimeout(timer);
+    timer = 0;
   }
 
-  function arm() {
-    if (paused || !action) return;
-    const token = generation;
-    const version = ++timerVersion;
+  function state(): SlideshowState {
+    const value =
+      pauses.size || !timer ? remaining : Math.max(0, deadline - clock.now());
+    return { duration, remaining: value, paused: pauses.size > 0, generation };
+  }
+
+  function emit() {
+    onState(state());
+  }
+
+  function schedule() {
+    clear();
+    if (pauses.size || remaining <= 0) {
+      emit();
+      return;
+    }
     deadline = clock.now() + remaining;
     timer = clock.setTimeout(() => {
-      if (token !== generation || version !== timerVersion || paused) return;
-      const next = action;
-      action = null;
-      next?.();
+      timer = 0;
+      remaining = 0;
+      emit();
+      onAdvance();
     }, remaining);
-  }
-
-  function schedule(next: () => void, delay: number) {
-    action = next;
-    remaining = delay;
-    arm();
-  }
-
-  function load() {
-    cancel();
-    if (!count) return;
-    const token = generation;
-    let settled = false;
-    const finish = () => {
-      if (token !== generation || settled) return false;
-      settled = true;
-      clock.clearTimeout(timer);
-      cancelLoad();
-      cancelLoad = () => {};
-      return true;
-    };
-    const fail = () => {
-      if (!finish()) return;
-      failures++;
-      index = (index + 1) % count;
-      if (failures >= count) {
-        playback.unavailable();
-        failures = 0;
-        schedule(load, 60_000);
-      } else {
-        // Queue even synchronous cache failures instead of recursing.
-        schedule(load, 0);
-      }
-    };
-    timer = clock.setTimeout(fail, 10_000);
-    const cleanup = playback.prepare(
-      index,
-      (commit) => {
-        if (!finish()) return;
-        failures = 0;
-        commit();
-        if (count > 1)
-          schedule(() => {
-            index = (index + 1) % count;
-            load();
-          }, duration);
-      },
-      fail,
-    );
-    // prepare may have completed synchronously for a cached photo or message.
-    if (settled || token !== generation) cleanup();
-    else cancelLoad = cleanup;
+    emit();
   }
 
   return {
-    replace(length: number, displaySeconds: number) {
-      cancel();
-      count = length;
-      duration =
-        Number.isFinite(displaySeconds) && displaySeconds > 0
-          ? displaySeconds * 1000
-          : 12_000;
-      index = 0;
-      failures = 0;
-      if (count) load();
-      else playback.unavailable();
+    commit(milliseconds: number) {
+      duration = Math.max(0, milliseconds);
+      remaining = duration;
+      schedule();
     },
-    stop() {
-      cancel();
-      count = 0;
+    pause(reason: string) {
+      if (pauses.has(reason)) return;
+      if (!pauses.size && timer)
+        remaining = Math.max(0, deadline - clock.now());
+      pauses.add(reason);
+      clear();
+      emit();
     },
-    setPaused(value: boolean) {
-      if (paused === value) return;
-      paused = value;
-      if (action) {
-        if (paused) {
-          remaining = Math.max(0, deadline - clock.now());
-          timerVersion++;
-          clock.clearTimeout(timer);
-        } else arm();
-      }
+    resume(reason: string) {
+      if (!pauses.delete(reason)) return;
+      schedule();
     },
+    cancel() {
+      clear();
+      duration = 0;
+      remaining = 0;
+      generation += 1;
+      emit();
+    },
+    invalidate() {
+      generation += 1;
+      return generation;
+    },
+    isCurrent(value: number) {
+      return value === generation;
+    },
+    isPaused() {
+      return pauses.size > 0;
+    },
+    getState: state,
+  };
+}
+
+export function revisionChanged(current: number | null, next: number) {
+  return current === null || current !== next;
+}
+
+export function commitSlideDwell(
+  controller: ReturnType<typeof createSlideshowController>,
+  slideCount: number,
+  milliseconds: number,
+) {
+  if (slideCount > 1) controller.commit(milliseconds);
+  else controller.cancel();
+}
+
+export function guardedDeferred(
+  clock: Pick<SlideshowClock, "setTimeout" | "clearTimeout">,
+  generation: number,
+  isCurrent: (generation: number) => boolean,
+  callback: () => void,
+  delay: number,
+) {
+  return clock.setTimeout(() => {
+    if (isCurrent(generation)) callback();
+  }, delay);
+}
+
+export function guardedCallback(
+  generation: number,
+  isCurrent: (generation: number) => boolean,
+  callback: () => void,
+) {
+  return () => {
+    if (isCurrent(generation)) callback();
   };
 }
