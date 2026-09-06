@@ -1,5 +1,6 @@
 import { startAutomaticUpdates } from "./automatic-updates";
 import { loadPhoto } from "./photo-load";
+import { applyScrim } from "./scrim";
 import {
   commitSlideDwell,
   createSlideshowController,
@@ -145,7 +146,10 @@ function commit(item: Slide) {
   counter.textContent = `${current + 1} / ${manifest.slides.length}`;
   progress.hidden = manifest.slides.length <= 1;
   failedInPass = 0;
-  if (!caption.hidden) fitText(caption);
+  if (!caption.hidden) {
+    fitText(caption);
+    applyScrim(caption, images[activeImage]);
+  }
   if (!message.hidden) fitText(message);
   commitSlideDwell(
     playback,
@@ -466,7 +470,10 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("resize", () => {
-  if (!caption.hidden) fitText(caption);
+  if (!caption.hidden) {
+    fitText(caption);
+    applyScrim(caption, images[activeImage]);
+  }
   if (!message.hidden) fitText(message);
 });
 if (document.fonts?.ready) {

@@ -70,7 +70,7 @@ export function SlidePreview({
           className={cn(
             "absolute inset-x-0 bottom-0 m-0 px-4 py-3 text-center text-xs",
             hasPhoto
-              ? "bg-gradient-to-t from-black/75 to-transparent pt-8 text-on-strong"
+              ? "bg-gradient-to-t from-black/70 via-black/60 to-transparent pt-10 text-on-strong"
               : "text-current opacity-80",
           )}
         >
