@@ -1,4 +1,5 @@
 import { startAutomaticUpdates } from "./automatic-updates";
+import { createSlideshowController } from "./slideshow";
 
 interface Slide {
   id: string;
@@ -29,6 +30,10 @@ const slideElement = document.getElementById("slide") as HTMLElement;
 const caption = document.getElementById("caption") as HTMLElement;
 const message = document.getElementById("message") as HTMLElement;
 const connection = document.getElementById("connection") as HTMLElement;
+const progress = document.getElementById("gallery-progress") as HTMLElement;
+const counter = document.getElementById("gallery-counter") as HTMLElement;
+const fill = document.getElementById("gallery-fill") as HTMLElement;
+const toggle = document.getElementById("gallery-toggle") as HTMLButtonElement;
 const images = [
   document.getElementById("photo-a") as HTMLImageElement,
   document.getElementById("photo-b") as HTMLImageElement,
@@ -36,51 +41,151 @@ const images = [
 let manifest: Manifest | null = null;
 let current = 0;
 let activeImage = 0;
-let timer = 0;
+let loadTimer = 0;
+let retryTimer = 0;
+let failedInPass = 0;
+let manuallyPaused = false;
+
+const playback = createSlideshowController(
+  {
+    now: () => Date.now(),
+    setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+    clearTimeout: (id) => window.clearTimeout(id),
+  },
+  () => {
+    if (!manifest?.slides.length) return;
+    current = (current + 1) % manifest.slides.length;
+    renderCurrent();
+  },
+  (state) => {
+    fill.style.transition = "none";
+    const start = state.duration ? 1 - state.remaining / state.duration : 0;
+    fill.style.transform = `scaleX(${Math.max(0, Math.min(1, start))})`;
+    if (!state.paused && state.remaining > 0) {
+      void fill.offsetWidth;
+      fill.style.transition = `transform ${state.remaining}ms linear`;
+      fill.style.transform = "scaleX(1)";
+    }
+  },
+);
 
 function showOnly(element: HTMLElement) {
   pairing.hidden = element !== pairing;
   empty.hidden = element !== empty;
   slideElement.hidden = element !== slideElement;
+  if (element !== slideElement) progress.hidden = true;
+}
+
+function clearLoad() {
+  window.clearTimeout(loadTimer);
+  loadTimer = 0;
+  for (const image of images) {
+    image.onload = null;
+    image.onerror = null;
+  }
+}
+
+function preferredSize(element: HTMLElement) {
+  if (element === caption)
+    return window.innerWidth < 600 ? 24 : window.innerWidth < 1000 ? 32 : 36;
+  return window.innerWidth < 600 ? 36 : window.innerWidth < 1000 ? 48 : 56;
+}
+
+function fitText(element: HTMLElement) {
+  const minimum =
+    element === caption
+      ? window.innerWidth < 600
+        ? 20
+        : 24
+      : window.innerWidth < 600
+        ? 18
+        : 24;
+  let size = preferredSize(element);
+  element.style.fontSize = `${size}px`;
+  for (
+    let attempts = 0;
+    attempts < 20 &&
+    size > minimum &&
+    (element.scrollHeight > element.clientHeight ||
+      element.scrollWidth > element.clientWidth);
+    attempts += 1
+  ) {
+    size = Math.max(minimum, size - 2);
+    element.style.fontSize = `${size}px`;
+  }
+}
+
+function commit(item: Slide) {
+  if (!manifest) return;
+  showOnly(slideElement);
+  caption.hidden =
+    !manifest.settings.showCaptions || !item.caption || item.kind === "message";
+  caption.textContent = item.caption || "";
+  counter.textContent = `${current + 1} / ${manifest.slides.length}`;
+  progress.hidden = manifest.slides.length <= 1;
+  failedInPass = 0;
+  if (!caption.hidden) fitText(caption);
+  if (!message.hidden) fitText(message);
+  if (manifest.slides.length > 1) {
+    playback.commit(manifest.settings.displaySeconds * 1000);
+  } else {
+    playback.cancel();
+  }
 }
 
 function renderCurrent() {
   if (!manifest || manifest.slides.length === 0) {
+    clearLoad();
+    playback.cancel();
     showOnly(empty);
     return;
   }
-  showOnly(slideElement);
   const item = manifest.slides[current % manifest.slides.length];
-  caption.hidden = !manifest.settings.showCaptions || !item.caption;
-  caption.textContent = item.caption || "";
+  const generation = playback.invalidate();
+  clearLoad();
   if (item.kind === "message") {
     images[0].className = "photo";
     images[1].className = "photo";
     message.hidden = false;
     message.textContent = item.message || "";
     message.dataset.theme = item.theme;
+    commit(item);
   } else {
-    message.hidden = true;
     const nextImage = images[1 - activeImage];
     // A slide's own choice wins; the household setting is the fallback.
     nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
     nextImage.style.objectPosition =
       item.focalPoint || manifest.settings.focalPoint || "center";
-    nextImage.src = item.mediaUrl || "";
     nextImage.onload = () => {
+      if (!playback.isCurrent(generation)) return;
+      window.clearTimeout(loadTimer);
+      message.hidden = true;
       images[activeImage].className = "photo";
       nextImage.className = "photo active";
       activeImage = 1 - activeImage;
+      commit(item);
     };
+    const failed = () => {
+      if (!playback.isCurrent(generation) || !manifest) return;
+      clearLoad();
+      failedInPass += 1;
+      if (failedInPass >= manifest.slides.length) {
+        playback.cancel();
+        showOnly(empty);
+        connection.hidden = false;
+        retryTimer = window.setTimeout(() => {
+          failedInPass = 0;
+          renderCurrent();
+        }, 60_000);
+        return;
+      }
+      current = (current + 1) % manifest.slides.length;
+      window.setTimeout(renderCurrent, 0);
+    };
+    nextImage.onerror = failed;
+    loadTimer = window.setTimeout(failed, 10_000);
+    nextImage.src = item.mediaUrl || "";
   }
-  window.clearTimeout(timer);
-  const displaySeconds = manifest.settings.displaySeconds;
-  timer = window.setTimeout(() => {
-    const currentManifest = manifest;
-    if (!currentManifest || currentManifest.slides.length === 0) return;
-    current = (current + 1) % currentManifest.slides.length;
-    renderCurrent();
-  }, displaySeconds * 1000);
 }
 
 function saveManifest(value: Manifest) {
@@ -133,7 +238,9 @@ async function refresh(): Promise<boolean> {
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
-      window.clearTimeout(timer);
+      clearLoad();
+      window.clearTimeout(retryTimer);
+      playback.cancel();
       showOnly(pairing);
       return false;
     }
@@ -149,6 +256,9 @@ async function refresh(): Promise<boolean> {
     connection.hidden = true;
     const changed = !manifest || next.revision !== manifest.revision;
     if (changed) {
+      clearLoad();
+      window.clearTimeout(retryTimer);
+      playback.cancel();
       manifest = next;
       current = 0;
       saveManifest(next);
@@ -223,6 +333,8 @@ async function pair(body: { code?: string; token?: string }) {
     error.textContent = `Connected, but this frame could not keep its session (${await sessionProbe()}). Allow cookies for this site, then ask for a new code.`;
     return false;
   }
+  playback.resume("manual");
+  manuallyPaused = false;
   return true;
 }
 
@@ -280,6 +392,33 @@ if ("serviceWorker" in navigator) {
 }
 void refresh();
 window.setInterval(refresh, 60_000);
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) void refresh();
+toggle.addEventListener("click", () => {
+  manuallyPaused = !manuallyPaused;
+  if (!manuallyPaused) {
+    playback.resume("manual");
+    toggle.textContent = "Ⅱ";
+    toggle.setAttribute("aria-label", "Pause slideshow");
+  } else {
+    playback.pause("manual");
+    toggle.textContent = "▶";
+    toggle.setAttribute("aria-label", "Resume slideshow");
+  }
 });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    playback.pause("hidden");
+  } else {
+    playback.resume("hidden");
+    void refresh();
+  }
+});
+window.addEventListener("resize", () => {
+  if (!caption.hidden) fitText(caption);
+  if (!message.hidden) fitText(message);
+});
+if (document.fonts?.ready) {
+  void document.fonts.ready.then(() => {
+    if (!caption.hidden) fitText(caption);
+    if (!message.hidden) fitText(message);
+  });
+}

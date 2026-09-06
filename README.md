@@ -89,7 +89,7 @@ If a frame is lost, revoke it from **Connected frames**. The next manifest or ph
 
 ## Compatibility
 
-The frame is designed around the original iPad Air’s iOS 12.5.7 baseline: plain DOM APIs, an ES2017/Safari 12 bundle, system fonts, and no optional viewer framework. Its generated CSS uses shared Tailwind design tokens but all critical viewer rules remain ordinary CSS outside Tailwind cascade layers, which older Safari ignores.
+The frame is designed around the original iPad Air’s iOS 12.5.7 baseline: plain DOM APIs, an ES2017/Safari 12 bundle, and no optional viewer framework. The dashboard, component library, and frame self-host Inter for interface text, with system sans fallbacks for unsupported glyphs; editorial headings, captions, and notes use Georgia with Times New Roman as a fallback. Its generated CSS uses shared Tailwind design tokens but all critical viewer rules remain ordinary CSS outside Tailwind cascade layers, which older Safari ignores.
 
 ### Physical iPad acceptance checklist
 

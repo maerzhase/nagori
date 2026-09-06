@@ -4,6 +4,9 @@ import { build } from "esbuild";
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
 await cp("public", "dist", { recursive: true });
+await cp("../../packages/ui/src/styles/fonts", "dist/fonts", {
+  recursive: true,
+});
 await build({
   entryPoints: ["src/viewer.ts"],
   outfile: "dist/viewer.js",
