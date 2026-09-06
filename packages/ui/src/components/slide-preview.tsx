@@ -54,9 +54,9 @@ export function SlidePreview({
         <img
           src={imageUrl as string}
           alt=""
-          style={{ objectPosition: focalPoint }}
+          style={{ objectPosition: fit === "cover" ? focalPoint : "center" }}
           className={cn(
-            "size-full",
+            "absolute inset-0 size-full",
             fit === "cover" ? "object-cover" : "object-contain",
           )}
         />

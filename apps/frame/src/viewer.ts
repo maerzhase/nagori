@@ -175,7 +175,9 @@ function renderCurrent() {
     // A slide's own choice wins; the household setting is the fallback.
     nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
     nextImage.style.objectPosition =
-      item.focalPoint || manifest.settings.focalPoint || "center";
+      nextImage.style.objectFit === "cover"
+        ? item.focalPoint || manifest.settings.focalPoint || "center"
+        : "center";
     const loaded = guardedCallback(generation, playback.isCurrent, () => {
       window.clearTimeout(loadTimer);
       message.hidden = true;

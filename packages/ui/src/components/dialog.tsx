@@ -1,8 +1,8 @@
 "use client";
 
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import { useEffect, useState } from "react";
 import type { JSX, ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
 import { cn } from "../lib/cn";
 
@@ -42,7 +42,7 @@ export interface DialogProps {
 }
 
 const panelClass =
-  "grid gap-4 bg-card text-foreground shadow-[0_24px_60px_rgba(41,37,31,0.22)]";
+  "grid auto-rows-max gap-4 bg-card text-foreground shadow-[0_24px_60px_rgba(41,37,31,0.22)]";
 const titleClass = "m-0 font-serif text-2xl leading-tight";
 const descriptionClass = "m-0 text-sm text-muted-foreground";
 
