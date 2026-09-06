@@ -26,6 +26,16 @@ pnpm db:migrate:local
 pnpm dev
 ```
 
+For populated demo data, seed the local database before starting the app:
+
+```bash
+pnpm db:seed:local
+```
+
+Sign in with `owner@nagori.test` / `password`. An editor account is also
+available at `editor@nagori.test` with the same password. These credentials are
+for local development only.
+
 Open the dashboard at the Next.js address printed by the command (normally `http://localhost:3000`) and complete first-run setup. Open `http://localhost:8788` on the device/browser intended to act as the frame, create a pairing code in the dashboard, and enter it there.
 
 The local database and object storage live in `.wrangler/state/` and are intentionally ignored by Git. To reset local data, stop the development servers and remove that specific directory.
