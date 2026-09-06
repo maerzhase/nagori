@@ -4,6 +4,7 @@ const CACHE_NAME = "nagori-media-v1";
 const FONT_CACHE_NAME = "nagori-fonts-inter-4.5.15";
 const CAPABILITY_CACHE_NAME = "nagori-capabilities-v1";
 const AUTOMATIC_UPDATES_MARKER = "/__nagori/automatic-updates";
+const RELEASE_ID = __NAGORI_RELEASE_ID__;
 const MAX_MEDIA_ENTRIES = 30;
 const FONT_PATHS = [
   "/fonts/inter-4.5.15-latin-400-normal.woff2",
@@ -83,7 +84,9 @@ self.addEventListener("message", (event) => {
   event.waitUntil(
     caches
       .open(CAPABILITY_CACHE_NAME)
-      .then((cache) => cache.put(AUTOMATIC_UPDATES_MARKER, new Response("1"))),
+      .then((cache) =>
+        cache.put(AUTOMATIC_UPDATES_MARKER, new Response(RELEASE_ID)),
+      ),
   );
 });
 

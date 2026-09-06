@@ -1,4 +1,4 @@
-const UPDATE_CHECK_INTERVAL_MS = 15 * 60_000;
+const UPDATE_CHECK_INTERVAL_MS = 60_000;
 
 interface Registration {
   update?: () => Promise<unknown>;

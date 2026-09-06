@@ -58,7 +58,7 @@ Then add six `production` environment secrets to the GitHub repository:
 
 The token needs Workers Scripts edit, D1 edit, and R2 edit on the account, plus DNS edit on the zone so the deploy can create the custom-domain records. A push to `main` runs [deploy.yml](.github/workflows/deploy.yml): checks, tests, database migrations, then frame and dashboard deployment.
 
-The installed viewer checks for a new application release every 15 minutes, as
+The installed viewer checks for a new application release every 60 seconds, as
 well as whenever it comes online or returns to the foreground. A deployed
 service worker takes control immediately and reloads the viewer once, so no one
 needs to visit the device to accept an update. This updates an already running
