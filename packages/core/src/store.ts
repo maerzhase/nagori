@@ -548,7 +548,7 @@ export class NagoriStore {
       SELECT s.id, s.kind, s.caption, s.message, s.theme, s.state,
              s.display_from AS displayFrom, s.display_until AS displayUntil,
              s.created_at AS createdAt, s.fit_mode AS fitMode,
-             s.focal_point AS focalPoint, s.position,
+             COALESCE(s.focal_position, s.focal_point) AS focalPoint, s.position,
              m.media_type AS mediaType, m.r2_key AS r2Key
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state != 'archived'
@@ -582,6 +582,8 @@ export class NagoriStore {
     contentType: string;
     sizeBytes: number;
     caption?: string;
+    fitMode?: FitMode | null;
+    focalPoint?: FocalPoint | null;
     displayFrom?: string;
     displayUntil?: string | null;
     defaultVisibilityDays?: number;
@@ -620,9 +622,9 @@ export class NagoriStore {
         ),
       this.db
         .prepare(
-          `INSERT INTO slides (id, household_id, kind, media_asset_id, caption,
+          `INSERT INTO slides (id, household_id, kind, media_asset_id, caption, fit_mode, focal_position,
              display_from, display_until, position, created_by, created_at, updated_at)
-           VALUES (?, ?, 'photo', ?, ?, ?, ?,
+           VALUES (?, ?, 'photo', ?, ?, ?, ?, ?, ?,
              (SELECT COALESCE(MAX(position), -1) + 1 FROM slides WHERE household_id = ?),
              ?, ?, ?)`,
         )
@@ -631,6 +633,8 @@ export class NagoriStore {
           input.householdId,
           mediaId,
           input.caption?.trim() || null,
+          input.fitMode ?? null,
+          input.focalPoint ?? null,
           displayFrom,
           displayUntil,
           input.householdId,
@@ -1086,7 +1090,7 @@ export class NagoriStore {
       .prepare(`
       SELECT s.id, s.kind, s.caption, s.message, s.theme,
              s.display_from AS displayFrom, s.display_until AS displayUntil,
-             s.fit_mode AS fitMode, s.focal_point AS focalPoint,
+             s.fit_mode AS fitMode, COALESCE(s.focal_position, s.focal_point) AS focalPoint,
              m.r2_key AS r2Key
       FROM slides s LEFT JOIN media_assets m ON m.id = s.media_asset_id
       WHERE s.household_id = ? AND s.state = 'published' AND s.display_from <= ?

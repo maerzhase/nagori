@@ -1,5 +1,6 @@
 "use client";
 
+import type { FitMode, FocalPoint, ViewerSettings } from "@nagori/core";
 import {
   Button,
   Field,
@@ -12,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createMessageAction } from "@/app/actions";
+import { PhotoFraming } from "./photo-framing";
 import { ScheduleFields } from "./schedule-fields";
 
 const THEMES = [
@@ -142,7 +144,10 @@ async function uploadWithRetry(
  * the transport: photos stream to /api/slides/photo so upload progress and
  * retries stay on the client, themes go through the message server action.
  */
-export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
+export function MemoryForm({ settings }: { settings: ViewerSettings }) {
+  const { showCaptions } = settings;
+  const [fit, setFit] = useState<FitMode>(settings.fitMode);
+  const [focalPoint, setFocalPoint] = useState<FocalPoint>(settings.focalPoint);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [background, setBackground] = useState<"photo" | "theme">("photo");
@@ -207,6 +212,8 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
               : isoAt(String(data.get("displayUntil") || ""), true);
             const headers: Record<string, string> = {
               "content-type": "image/jpeg",
+              "x-fit-mode": fit,
+              "x-focal-point": focalPoint,
               "x-file-size": String(body.size),
               "x-caption": encodeURIComponent(
                 String(data.get("caption") || "").slice(0, 180),
@@ -225,6 +232,8 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
             formRef.current?.reset();
             setText("");
             setPhotoUrl(null);
+            setFit(settings.fitMode);
+            setFocalPoint(settings.focalPoint);
             setState("done");
             setProgress("");
             router.refresh();
@@ -271,6 +280,7 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
                 required
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
+                  setFocalPoint(settings.focalPoint);
                   setPhotoUrl((previous) => {
                     if (previous) URL.revokeObjectURL(previous);
                     return file ? URL.createObjectURL(file) : null;
@@ -324,19 +334,35 @@ export function MemoryForm({ showCaptions }: { showCaptions: boolean }) {
         </p>
       </form>
       <div className="composer-preview">
-        <p className="eyebrow">On the frame</p>
-        <SlidePreview
-          imageUrl={isPhoto ? photoUrl : null}
-          theme={theme}
-          message={isPhoto ? null : text}
-          caption={isPhoto ? text : null}
-          placeholder={
-            isPhoto
-              ? "Your photo will appear here."
-              : "Your note will appear here."
-          }
-          showCaption={showCaptions}
-        />
+        {isPhoto && photoUrl ? (
+          <PhotoFraming
+            imageUrl={photoUrl}
+            fit={fit}
+            focalPoint={focalPoint}
+            onFitChange={setFit}
+            onFocalChange={setFocalPoint}
+            caption={text}
+            showCaption={showCaptions}
+          />
+        ) : (
+          <>
+            <p className="eyebrow">On the frame</p>
+            <SlidePreview
+              imageUrl={isPhoto ? photoUrl : null}
+              fit={fit}
+              focalPoint={focalPoint}
+              theme={theme}
+              message={isPhoto ? null : text}
+              caption={isPhoto ? text : null}
+              placeholder={
+                isPhoto
+                  ? "Your photo will appear here."
+                  : "Your note will appear here."
+              }
+              showCaption={showCaptions}
+            />
+          </>
+        )}
         <p className="preview-note">
           {isPhoto && !photoUrl
             ? "Choose a photo to see it here."

@@ -4,7 +4,13 @@ export type SlideState = "draft" | "published" | "archived";
 
 export type FitMode = "contain" | "cover";
 /** Which part of a photo survives a crop, as an `object-position` keyword. */
-export type FocalPoint = "center" | "top" | "bottom" | "left" | "right";
+export type FocalPoint =
+  | "center"
+  | "top"
+  | "bottom"
+  | "left"
+  | "right"
+  | `${number}% ${number}%`;
 
 export const FIT_MODES: readonly FitMode[] = ["contain", "cover"];
 export const FOCAL_POINTS: readonly FocalPoint[] = [
@@ -20,7 +26,15 @@ export function isFitMode(value: unknown): value is FitMode {
 }
 
 export function isFocalPoint(value: unknown): value is FocalPoint {
-  return FOCAL_POINTS.includes(value as FocalPoint);
+  if (FOCAL_POINTS.includes(value as FocalPoint)) return true;
+  if (
+    typeof value !== "string" ||
+    !/^\d+(?:\.\d+)?% \d+(?:\.\d+)?%$/.test(value)
+  )
+    return false;
+  return value
+    .split(" ")
+    .every((part) => parseFloat(part) >= 0 && parseFloat(part) <= 100);
 }
 
 export interface ViewerSettings {

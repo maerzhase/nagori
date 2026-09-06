@@ -1,4 +1,9 @@
-import { ACTIVE_SLIDE_LIMIT, randomId } from "@nagori/core";
+import {
+  ACTIVE_SLIDE_LIMIT,
+  isFitMode,
+  isFocalPoint,
+  randomId,
+} from "@nagori/core";
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
@@ -39,7 +44,11 @@ export async function POST(request: Request) {
   try {
     const store = getStore();
     const settings = await store.getSettings(user.householdId);
+    const fit = request.headers.get("x-fit-mode");
+    const focal = request.headers.get("x-focal-point");
     const id = await store.createPhotoSlide({
+      fitMode: isFitMode(fit) ? fit : null,
+      focalPoint: isFocalPoint(focal) ? focal : null,
       householdId: user.householdId,
       userId: user.id,
       r2Key: key,

@@ -270,7 +270,7 @@ export default async function Home({
                 <p className="eyebrow">Share something new</p>
                 <h2>What would you like to share?</h2>
               </div>
-              <MemoryForm showCaptions={settings.showCaptions} />
+              <MemoryForm settings={settings} />
             </section>
           </>
         ),
