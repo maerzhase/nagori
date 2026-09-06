@@ -57,7 +57,7 @@ function harness(controlled = true) {
       listeners.delete(`window:${type}`);
     },
     setInterval(callback: () => void, delay: number) {
-      assert.equal(delay, 15 * 60_000);
+      assert.equal(delay, 60_000);
       intervals.push(callback);
       return intervals.length;
     },

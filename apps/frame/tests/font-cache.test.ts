@@ -67,6 +67,7 @@ async function harness(fetcher: (request: unknown) => Promise<Response>) {
     Request,
     URL,
     Promise,
+    __NAGORI_RELEASE_ID__: "test-release",
   });
   return { listeners, stores, caches };
 }
