@@ -42,6 +42,10 @@ const progress = document.getElementById("gallery-progress") as HTMLElement;
 const counter = document.getElementById("gallery-counter") as HTMLElement;
 const fill = document.getElementById("gallery-fill") as HTMLElement;
 const toggle = document.getElementById("gallery-toggle") as HTMLButtonElement;
+const sleepToggle = document.getElementById(
+  "sleep-toggle",
+) as HTMLButtonElement;
+const sleepScreen = document.getElementById("sleep") as HTMLButtonElement;
 const images = [
   document.getElementById("photo-a") as HTMLImageElement,
   document.getElementById("photo-b") as HTMLImageElement,
@@ -85,6 +89,24 @@ function showOnly(element: HTMLElement) {
   empty.hidden = element !== empty;
   slideElement.hidden = element !== slideElement;
   if (element !== slideElement) progress.hidden = true;
+  sleepToggle.hidden = element === pairing || !sleepScreen.hidden;
+}
+
+/**
+ * The iPad runs in kiosk mode, so its own screen cannot be switched off. Going
+ * black in the app is the nearest thing, and it must survive the overnight
+ * automatic-update reload or the room lights up at three in the morning.
+ */
+function setAsleep(asleep: boolean) {
+  sleepScreen.hidden = !asleep;
+  sleepToggle.hidden = asleep || !pairing.hidden;
+  if (asleep) playback.pause("sleep");
+  else playback.resume("sleep");
+  try {
+    localStorage.setItem("nagori-asleep", asleep ? "1" : "");
+  } catch (_error) {
+    /* storage may be disabled */
+  }
 }
 
 function clearLoad() {
@@ -449,6 +471,13 @@ if ("serviceWorker" in navigator) {
 }
 void refresh();
 window.setInterval(refresh, 60_000);
+sleepToggle.addEventListener("click", () => setAsleep(true));
+sleepScreen.addEventListener("click", () => setAsleep(false));
+try {
+  if (localStorage.getItem("nagori-asleep") === "1") setAsleep(true);
+} catch (_error) {
+  /* storage may be disabled */
+}
 toggle.addEventListener("click", () => {
   manuallyPaused = !manuallyPaused;
   if (!manuallyPaused) {
