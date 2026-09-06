@@ -1,12 +1,39 @@
 // @ts-nocheck
 
 const CACHE_NAME = "nagori-media-v1";
+const FONT_CACHE_NAME = "nagori-fonts-inter-4.5.15";
 const CAPABILITY_CACHE_NAME = "nagori-capabilities-v1";
 const AUTOMATIC_UPDATES_MARKER = "/__nagori/automatic-updates";
 const MAX_MEDIA_ENTRIES = 30;
+const FONT_PATHS = [
+  "/fonts/inter-4.5.15-latin-400-normal.woff2",
+  "/fonts/inter-4.5.15-latin-500-normal.woff2",
+  "/fonts/inter-4.5.15-latin-600-normal.woff2",
+  "/fonts/inter-4.5.15-latin-700-normal.woff2",
+  "/fonts/inter-4.5.15-latin-ext-400-normal.woff2",
+  "/fonts/inter-4.5.15-latin-ext-500-normal.woff2",
+  "/fonts/inter-4.5.15-latin-ext-600-normal.woff2",
+  "/fonts/inter-4.5.15-latin-ext-700-normal.woff2",
+];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(
+    Promise.all([
+      self.skipWaiting(),
+      caches.open(FONT_CACHE_NAME).then(async (cache) => {
+        await Promise.all(
+          FONT_PATHS.map(async (path) => {
+            try {
+              const response = await fetch(path);
+              if (response.ok) await cache.put(path, response);
+            } catch {
+              // Fonts remain optional: system fallbacks keep install usable.
+            }
+          }),
+        );
+      }),
+    ]),
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -25,6 +52,7 @@ self.addEventListener("activate", (event) => {
             (key) =>
               key.startsWith("nagori-") &&
               key !== CACHE_NAME &&
+              key !== FONT_CACHE_NAME &&
               key !== CAPABILITY_CACHE_NAME,
           )
           .map((key) => caches.delete(key)),
@@ -71,6 +99,26 @@ async function trim(cache) {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
+  if (
+    request.method === "GET" &&
+    url.origin === self.location.origin &&
+    FONT_PATHS.indexOf(url.pathname) !== -1
+  ) {
+    event.respondWith(
+      caches.open(FONT_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        try {
+          const response = await fetch(request);
+          if (response.ok) await cache.put(request, response.clone());
+          return response;
+        } catch {
+          return new Response("Offline", { status: 503 });
+        }
+      }),
+    );
+    return;
+  }
   if (
     request.method !== "GET" ||
     url.origin !== self.location.origin ||

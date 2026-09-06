@@ -21,7 +21,8 @@
   --color-success-surface: var(--success-surface);
   --color-warning: var(--warning);
   --color-warning-surface: var(--warning-surface);
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: var(--nagori-font-sans);
+  --font-serif: var(--nagori-font-serif);
 }
 
 @layer base {

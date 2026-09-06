@@ -14,7 +14,7 @@
 
 :root {
   color-scheme: dark;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--nagori-font-sans);
   background: #171512;
   color: #f8f3eb;
 }
@@ -31,6 +31,8 @@ body,
 }
 body {
   background: #171512;
+  font-size: 18px;
+  line-height: 1.5;
 }
 .slide {
   position: relative;
@@ -40,7 +42,10 @@ body {
 }
 .photo {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -54,11 +59,18 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 80px;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: Safari 12 fallback before env(). */
+  bottom: calc(80px + env(safe-area-inset-bottom));
   margin: 0;
   padding: 4.5rem 5vw 2.5rem;
-  font-family: Georgia, serif;
-  font-size: clamp(24px, 4vw, 42px);
+  max-height: calc(55% - 80px);
+  overflow: auto;
+  overflow-wrap: break-word;
+  font-family: var(--nagori-font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.3;
   text-align: center;
   text-shadow: 0 2px 16px #000;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
@@ -69,12 +81,15 @@ body {
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding: 10vw;
+  padding: 8vw 10vw calc(8vw + 80px);
   text-align: center;
   white-space: pre-wrap;
-  font:
-    500 clamp(40px, 7vw, 82px) / 1.12 Georgia,
-    serif;
+  overflow: auto;
+  overflow-wrap: break-word;
+  font-family: var(--nagori-font-serif);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.2;
   background: var(--memory-paper, #f4eadb);
   color: var(--memory-ink, #30271f);
 }
@@ -113,26 +128,29 @@ body {
 }
 h1 {
   margin: 0.7rem 0;
-  font:
-    500 clamp(38px, 6vw, 64px) / 1.05 Georgia,
-    serif;
+  font-family: var(--nagori-font-serif);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
 }
 .hint,
 .empty p {
   max-width: 34rem;
   color: #70675d;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.5;
 }
 form {
-  width: min(25rem, 100%);
+  width: 100%;
+  max-width: 25rem;
   margin-top: 1.5rem;
 }
 label {
   display: block;
   margin-bottom: 0.5rem;
   color: #70675d;
-  font-size: 14px;
+  font-size: 18px;
+  line-height: 1.4;
 }
 input {
   width: 100%;
@@ -142,6 +160,8 @@ input {
   background: white;
   color: var(--memory-ink, #29251f);
   font-size: 36px;
+  font-family: inherit;
+  font-weight: 400;
   letter-spacing: 0.3em;
   text-align: center;
 }
@@ -154,6 +174,8 @@ button {
   background: var(--memory-ink, #29251f);
   color: white;
   font-size: 18px;
+  font-family: inherit;
+  line-height: 1.4;
 }
 .error {
   min-height: 1.5rem;
@@ -168,10 +190,104 @@ button {
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.68);
   color: #f7ead8;
-  font-size: 13px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.gallery-progress {
+  position: fixed;
+  z-index: 5;
+  bottom: 16px;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: Safari 12 fallback before env(). */
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  width: auto;
+  max-width: 240px;
+  height: 48px;
+  align-items: center;
+  padding: 0 8px 0 12px;
+  border: 1px solid rgba(248, 243, 235, 0.22);
+  border-radius: 999px;
+  background: rgba(23, 21, 18, 0.88);
+  color: #f8f3eb;
+  font-family: var(--nagori-font-sans);
+  transform: translateX(-50%);
+}
+.gallery-counter {
+  min-width: 4.2em;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.gallery-track {
+  display: block;
+  width: 64px;
+  height: 3px;
+  margin-left: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(248, 243, 235, 0.28);
+}
+.gallery-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: #f8f3eb;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.gallery-toggle {
+  width: 44px;
+  height: 44px;
+  margin: 0 0 0 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #f8f3eb;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 44px;
+}
+.gallery-toggle:focus {
+  outline: 2px solid #f8f3eb;
+  outline-offset: 1px;
+}
+@media (min-width: 600px) {
+  .caption {
+    font-size: 32px;
+  }
+  .message,
+  h1 {
+    font-size: 48px;
+  }
+  .hint,
+  .empty p {
+    font-size: 22px;
+  }
+  label,
+  button {
+    font-size: 20px;
+  }
+  .eyebrow {
+    font-size: 16px;
+  }
+}
+@media (min-width: 1000px) {
+  .caption {
+    font-size: 36px;
+  }
+  .message,
+  h1 {
+    font-size: 56px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .photo {
     transition: none;
+  }
+  .gallery-track {
+    display: none;
   }
 }
