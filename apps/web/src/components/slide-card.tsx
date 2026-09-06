@@ -1,24 +1,26 @@
 "use client";
 
-import type { SlideRow } from "@nagori/core";
-import type { FitMode, FocalPoint, ViewerSettings } from "@nagori/core";
+import type {
+  FitMode,
+  FocalPoint,
+  SlideRow,
+  ViewerSettings,
+} from "@nagori/core";
 import {
   Button,
+  buttonVariants,
   ConfirmButton,
   Dialog,
   Field,
+  Input,
   SegmentedControl,
-  Select,
   SlidePreview,
+  Textarea,
 } from "@nagori/ui";
 import type { CSSProperties } from "react";
-import { useState } from "react";
-import {
-  archiveSlideAction,
-  rescheduleSlideAction,
-  updateSlideDisplayAction,
-} from "@/app/actions";
-import { ScheduleFields } from "./schedule-fields";
+import { useEffect, useRef, useState } from "react";
+import { archiveSlideAction, updateSlideDisplayAction } from "@/app/actions";
+import { PhotoFraming } from "./photo-framing";
 
 function formatDate(value: string | null) {
   if (!value) return "Kept forever";
@@ -148,93 +150,280 @@ export function SlideCard({
         </div>
       </div>
 
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        title={label}
-        description={
-          slide.displayUntil
-            ? `Showing until ${formatDate(slide.displayUntil)}`
-            : "Kept in the rotation forever"
-        }
-      >
-        <SlidePreview
-          className="max-w-56 rounded-lg"
+      {open && (
+        <MemoryEditor
+          slide={slide}
+          settings={settings}
           imageUrl={imageUrl}
-          theme={slide.theme}
-          message={slide.message}
-          caption={slide.caption}
-          fit={slide.fitMode ?? settings.fitMode}
-          focalPoint={slide.focalPoint ?? settings.focalPoint}
-          showCaption={settings.showCaptions}
+          onClose={() => setOpen(false)}
         />
-
-        {slide.kind === "photo" ? (
-          <form action={updateSlideDisplayAction} className="dialog-form">
-            <input type="hidden" name="slideId" value={slide.id} />
-            <DisplayFields slide={slide} settings={settings} />
-            <Button size="sm" type="submit">
-              Save framing
-            </Button>
-          </form>
-        ) : null}
-
-        <form action={rescheduleSlideAction} className="dialog-form">
-          <input type="hidden" name="slideId" value={slide.id} />
-          <ScheduleFields
-            displayFrom={slide.displayFrom}
-            displayUntil={slide.displayUntil}
-            forever={slide.displayUntil === null}
-          />
-          <Button size="sm" type="submit">
-            Save schedule
-          </Button>
-        </form>
-      </Dialog>
+      )}
     </article>
   );
 }
 
-/** Per-slide framing, defaulting to whatever the household setting says. */
-function DisplayFields({
+function MemoryEditor({
   slide,
   settings,
+  imageUrl,
+  onClose,
 }: {
   slide: SlideRow;
   settings: ViewerSettings;
+  imageUrl: string | null;
+  onClose: () => void;
 }) {
-  const [fit, setFit] = useState<FitMode>(slide.fitMode ?? settings.fitMode);
+  const [initial] = useState(() => ({
+    fit: slide.fitMode ?? settings.fitMode,
+    focal: slide.focalPoint ?? settings.focalPoint,
+    text:
+      slide.kind === "photo" ? (slide.caption ?? "") : (slide.message ?? ""),
+    from: slide.displayFrom.slice(0, 10),
+    until: slide.displayUntil?.slice(0, 10) ?? "",
+    mode: slide.displayUntil === null ? "forever" : "until",
+  }));
+  const [fit, setFit] = useState<FitMode>(initial.fit);
+  const [focalPoint, setFocalPoint] = useState<FocalPoint>(initial.focal);
+  const [text, setText] = useState(initial.text);
+  const [from, setFrom] = useState(initial.from);
+  const [until, setUntil] = useState(initial.until);
+  const [mode, setMode] = useState(initial.mode);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [discard, setDiscard] = useState(false);
+  const canonical = (point: FocalPoint) =>
+    ({
+      center: "50% 50%",
+      top: "50% 0%",
+      bottom: "50% 100%",
+      left: "0% 50%",
+      right: "100% 50%",
+    })[point as "center"] ?? point;
+  const scheduleChanged =
+    from !== initial.from ||
+    mode !== initial.mode ||
+    (mode === "until" && until !== initial.until);
+  const dirty =
+    text !== initial.text ||
+    fit !== initial.fit ||
+    canonical(focalPoint) !== canonical(initial.focal) ||
+    scheduleChanged;
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const scrollBody = useRef<HTMLDivElement>(null);
+  const scrollPosition = useRef(0);
+  useEffect(() => {
+    if (discard) keepEditingRef.current?.focus();
+    else if (returnFocus.current) {
+      if (scrollBody.current)
+        scrollBody.current.scrollTop = scrollPosition.current;
+      returnFocus.current.focus({ preventScroll: true });
+      returnFocus.current = null;
+    }
+  }, [discard]);
+  const close = () => {
+    if (saving) return;
+    if (discard) {
+      setDiscard(false);
+      return;
+    }
+    if (dirty) {
+      returnFocus.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      scrollPosition.current = scrollBody.current?.scrollTop ?? 0;
+      setDiscard(true);
+    } else onClose();
+  };
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   return (
-    <>
-      <SegmentedControl
-        name="fitMode"
-        legend="How it fills the frame"
-        options={[
-          { value: "contain", label: "Whole photo" },
-          { value: "cover", label: "Fill the screen" },
-        ]}
-        value={fit}
-        onValueChange={(next) => setFit(next as FitMode)}
-      />
-      {/* Only a crop hides part of the photo, so the choice of which part to
-          keep is meaningless when the whole photo is shown. */}
-      {fit === "cover" ? (
-        <Field label="Keep this part in view">
-          <Select
-            name="focalPoint"
-            defaultValue={slide.focalPoint ?? settings.focalPoint}
-            options={FOCAL_OPTIONS}
-          />
-        </Field>
-      ) : null}
-    </>
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      className={`memory-editor-dialog${discard ? " memory-editor-confirming" : ""}`}
+      title={
+        discard ? (
+          "Discard unsaved changes?"
+        ) : (
+          <span className="memory-editor-heading">
+            <span>Edit memory</span>
+            <span
+              className="memory-editor-state"
+              data-dirty={dirty}
+              role="status"
+            >
+              {saving ? "Saving…" : dirty ? "Unsaved changes" : null}
+            </span>
+            <Button
+              type="button"
+              variant="subtle"
+              size="icon"
+              aria-label="Close editor"
+              onClick={close}
+              disabled={saving}
+            >
+              <CloseIcon />
+            </Button>
+          </span>
+        )
+      }
+    >
+      <form
+        hidden={discard}
+        className="memory-editor-form"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (saving || !dirty) return;
+          const data = new FormData(event.currentTarget);
+          setSaving(true);
+          setError("");
+          try {
+            const result = await updateSlideDisplayAction(data);
+            if (result.error) {
+              setError(result.error);
+              setSaving(false);
+              return;
+            }
+            onClose();
+          } catch {
+            setError(
+              "Couldn’t save. Your changes are still here—please try again.",
+            );
+            setSaving(false);
+          }
+        }}
+      >
+        <input type="hidden" name="slideId" value={slide.id} />
+        <input
+          type="hidden"
+          name="scheduleChanged"
+          value={scheduleChanged ? "yes" : "no"}
+        />
+        <div ref={scrollBody} className="memory-editor-body" data-vaul-no-drag>
+          <fieldset disabled={saving} className="memory-editor-fields">
+            {imageUrl ? (
+              <PhotoFraming
+                imageUrl={imageUrl}
+                fit={fit}
+                focalPoint={focalPoint}
+                onFitChange={setFit}
+                onFocalChange={setFocalPoint}
+                caption={text}
+                showCaption={settings.showCaptions}
+              />
+            ) : (
+              <SlidePreview
+                className="rounded-lg"
+                theme={slide.theme}
+                message={text}
+              />
+            )}
+            <Field
+              label={imageUrl ? "Little note" : "Message"}
+              hint={imageUrl ? "optional" : undefined}
+            >
+              <Textarea
+                name="text"
+                rows={2}
+                value={text}
+                onChange={(event) => setText(event.currentTarget.value)}
+                maxLength={imageUrl ? 180 : 280}
+                required={!imageUrl}
+                className="memory-editor-note"
+              />
+            </Field>
+            <section className="memory-editor-schedule" aria-label="Schedule">
+              <h3>Schedule</h3>
+              <div className="memory-editor-dates">
+                <Field label="First shown">
+                  <Input
+                    name="displayFrom"
+                    type="date"
+                    value={from}
+                    onChange={(event) => setFrom(event.currentTarget.value)}
+                    required
+                  />
+                </Field>
+                <SegmentedControl
+                  name="scheduleMode"
+                  legend="Keep on the frame"
+                  options={[
+                    { value: "forever", label: "Forever" },
+                    { value: "until", label: "Until a date" },
+                  ]}
+                  value={mode}
+                  onValueChange={setMode}
+                />
+                {mode === "until" && (
+                  <Field label="Last shown">
+                    <Input
+                      name="displayUntil"
+                      type="date"
+                      min={from}
+                      value={until}
+                      onChange={(event) => setUntil(event.currentTarget.value)}
+                      required
+                    />
+                  </Field>
+                )}
+              </div>
+            </section>
+          </fieldset>
+        </div>
+        <div className="memory-editor-footer">
+          {error && (
+            <p className="memory-editor-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="memory-editor-buttons">
+            <Button
+              type="button"
+              variant="subtle"
+              size="sm"
+              onClick={close}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={saving || !dirty}>
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      </form>
+      {discard && (
+        <div className="memory-editor-confirmation">
+          <p>
+            Your changes haven’t been saved. Keep editing to finish, or discard
+            them to close this memory.
+          </p>
+          <div className="memory-editor-buttons">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Discard changes
+            </Button>
+            <button
+              ref={keepEditingRef}
+              className={buttonVariants()}
+              type="button"
+              onClick={() => setDiscard(false)}
+            >
+              Keep editing
+            </button>
+          </div>
+        </div>
+      )}
+    </Dialog>
   );
 }
-
-export const FOCAL_OPTIONS: { value: FocalPoint; label: string }[] = [
-  { value: "center", label: "The middle" },
-  { value: "top", label: "The top" },
-  { value: "bottom", label: "The bottom" },
-  { value: "left", label: "The left" },
-  { value: "right", label: "The right" },
-];

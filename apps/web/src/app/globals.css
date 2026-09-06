@@ -1130,3 +1130,133 @@ footer span {
   opacity: 0.4;
   cursor: default;
 }
+
+.memory-editor-dialog {
+  height: min(52rem, 88dvh);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding: 1rem 1.25rem 0;
+}
+.memory-editor-dialog > h2 {
+  flex-shrink: 0;
+  font-family: var(--nagori-font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.memory-editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.75rem;
+}
+.memory-editor-heading > button {
+  margin-left: auto;
+}
+.memory-editor-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+.memory-editor-state[data-dirty="true"] {
+  color: var(--memory-warning);
+}
+.memory-editor-state[data-dirty="true"]::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.memory-editor-form {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.memory-editor-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 0 0.25rem 1rem 0;
+}
+.memory-editor-fields {
+  display: grid;
+  gap: 1.1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.memory-editor-body .memory-editor-note {
+  min-height: 4.5rem;
+  padding: 0.6rem 0.75rem;
+}
+.memory-editor-schedule {
+  border-top: 1px solid var(--line);
+  padding-top: 0.85rem;
+}
+.memory-editor-schedule h3 {
+  margin: 0;
+  font-family: var(--nagori-font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.memory-editor-dates {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 1rem;
+}
+.memory-editor-footer {
+  flex-shrink: 0;
+  padding: 0.85rem 0 max(0.85rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--memory-card);
+}
+.memory-editor-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+.memory-editor-error {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+}
+.memory-editor-error {
+  color: var(--memory-danger);
+}
+
+@media (max-width: 720px) {
+  .memory-editor-dialog {
+    height: 92dvh;
+  }
+}
+
+.memory-editor-form[hidden] {
+  display: none;
+}
+.memory-editor-dialog.memory-editor-confirming {
+  height: auto;
+  padding-bottom: 1.25rem;
+}
+.memory-editor-confirmation {
+  display: grid;
+  gap: 1.25rem;
+  padding-top: 0.75rem;
+}
+.memory-editor-confirmation p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.memory-editor-confirmation .memory-editor-buttons {
+  flex-wrap: wrap;
+}

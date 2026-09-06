@@ -187,21 +187,51 @@ export async function moveSlideAction(slideId: string, toIndex: number) {
   revalidatePath("/");
 }
 
-export async function updateSlideDisplayAction(formData: FormData) {
+export async function updateSlideDisplayAction(
+  formData: FormData,
+): Promise<{ error?: string }> {
   const user = await requireUser();
-  if (user.role === "viewer") redirect("/?error=permission");
+  if (user.role === "viewer")
+    return { error: "You don’t have permission to edit this memory." };
   const fit = text(formData, "fitMode");
   const focal = text(formData, "focalPoint");
-  await getStore().updateSlideDisplay({
-    householdId: user.householdId,
-    userId: user.id,
-    slideId: text(formData, "slideId"),
-    // "inherit" is the absence of an override, not a value.
-    fitMode: isFitMode(fit) ? fit : null,
-    focalPoint: isFocalPoint(focal) ? focal : null,
-  });
+  let schedule:
+    | { displayFrom: string; displayUntil: string | null }
+    | undefined;
+  if (text(formData, "scheduleChanged") === "yes") {
+    const displayFrom = safeDate(text(formData, "displayFrom"));
+    const forever = text(formData, "scheduleMode") === "forever";
+    const displayUntil = forever
+      ? null
+      : safeDate(text(formData, "displayUntil"), true);
+    if (
+      !displayFrom ||
+      (!forever && !displayUntil) ||
+      (displayUntil && displayUntil < displayFrom)
+    ) {
+      return { error: "Choose a last day on or after the first day." };
+    }
+    schedule = { displayFrom, displayUntil };
+  }
+  try {
+    const updated = await getStore().updateSlideDisplay({
+      householdId: user.householdId,
+      userId: user.id,
+      slideId: text(formData, "slideId"),
+      fitMode: isFitMode(fit) ? fit : null,
+      focalPoint: isFocalPoint(focal) ? focal : null,
+      text: text(formData, "text"),
+      schedule,
+    });
+    if (!updated) return { error: "This memory is no longer available." };
+  } catch {
+    return {
+      error:
+        "Couldn’t save your memory. Your changes are still here—please try again.",
+    };
+  }
   revalidatePath("/");
-  redirect("/?saved=display&tab=library");
+  return {};
 }
 
 /**

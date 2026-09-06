@@ -766,23 +766,43 @@ export class NagoriStore {
     slideId: string;
     fitMode: FitMode | null;
     focalPoint: FocalPoint | null;
+    text: string;
+    schedule?: { displayFrom: string; displayUntil: string | null };
   }): Promise<boolean> {
+    if (
+      input.schedule &&
+      !isValidScheduleWindow(
+        input.schedule.displayFrom,
+        input.schedule.displayUntil,
+      )
+    ) {
+      throw new Error("INVALID_SCHEDULE");
+    }
     const now = new Date();
     const slide = await this.db
       .prepare(
-        "SELECT id FROM slides WHERE id = ? AND household_id = ? AND state != 'archived'",
+        "SELECT id, kind FROM slides WHERE id = ? AND household_id = ? AND state != 'archived'",
       )
       .bind(input.slideId, input.householdId)
-      .first<{ id: string }>();
+      .first<{ id: string; kind: string }>();
     if (!slide) return false;
+    if (slide.kind === "message" && !input.text.trim())
+      throw new Error("EMPTY_MESSAGE");
     await this.db.batch([
       this.db
         .prepare(
-          "UPDATE slides SET fit_mode = ?, focal_point = ? WHERE id = ? AND household_id = ?",
+          "UPDATE slides SET fit_mode = ?, focal_position = ?, caption = CASE WHEN kind = 'photo' THEN ? ELSE caption END, message = CASE WHEN kind = 'message' THEN ? ELSE message END, updated_at = ?, display_from = CASE WHEN ? THEN ? ELSE display_from END, display_until = CASE WHEN ? THEN ? ELSE display_until END WHERE id = ? AND household_id = ?",
         )
         .bind(
           input.fitMode,
           input.focalPoint,
+          input.text.trim().slice(0, 180) || null,
+          input.text.trim().slice(0, 280),
+          now.toISOString(),
+          input.schedule ? 1 : 0,
+          input.schedule?.displayFrom ?? null,
+          input.schedule ? 1 : 0,
+          input.schedule?.displayUntil ?? null,
           input.slideId,
           input.householdId,
         ),
@@ -790,7 +810,7 @@ export class NagoriStore {
       this.auditStatement(
         input.householdId,
         input.userId,
-        "slide.display_updated",
+        "slide.updated",
         input.slideId,
         now,
       ),
