@@ -1,5 +1,11 @@
 import { startAutomaticUpdates } from "./automatic-updates";
-import { createSlideshowController } from "./slideshow";
+import {
+  commitSlideDwell,
+  createSlideshowController,
+  guardedCallback,
+  guardedDeferred,
+  revisionChanged,
+} from "./slideshow";
 
 interface Slide {
   id: string;
@@ -43,6 +49,7 @@ let current = 0;
 let activeImage = 0;
 let loadTimer = 0;
 let retryTimer = 0;
+let skipTimer = 0;
 let failedInPass = 0;
 let manuallyPaused = false;
 
@@ -83,6 +90,15 @@ function clearLoad() {
     image.onload = null;
     image.onerror = null;
   }
+}
+
+function cancelRendering() {
+  clearLoad();
+  window.clearTimeout(retryTimer);
+  window.clearTimeout(skipTimer);
+  retryTimer = 0;
+  skipTimer = 0;
+  playback.cancel();
 }
 
 function preferredSize(element: HTMLElement) {
@@ -126,17 +142,16 @@ function commit(item: Slide) {
   failedInPass = 0;
   if (!caption.hidden) fitText(caption);
   if (!message.hidden) fitText(message);
-  if (manifest.slides.length > 1) {
-    playback.commit(manifest.settings.displaySeconds * 1000);
-  } else {
-    playback.cancel();
-  }
+  commitSlideDwell(
+    playback,
+    manifest.slides.length,
+    manifest.settings.displaySeconds * 1000,
+  );
 }
 
 function renderCurrent() {
   if (!manifest || manifest.slides.length === 0) {
-    clearLoad();
-    playback.cancel();
+    cancelRendering();
     showOnly(empty);
     return;
   }
@@ -156,15 +171,14 @@ function renderCurrent() {
     nextImage.style.objectFit = item.fitMode || manifest.settings.fitMode;
     nextImage.style.objectPosition =
       item.focalPoint || manifest.settings.focalPoint || "center";
-    nextImage.onload = () => {
-      if (!playback.isCurrent(generation)) return;
+    nextImage.onload = guardedCallback(generation, playback.isCurrent, () => {
       window.clearTimeout(loadTimer);
       message.hidden = true;
       images[activeImage].className = "photo";
       nextImage.className = "photo active";
       activeImage = 1 - activeImage;
       commit(item);
-    };
+    });
     const failed = () => {
       if (!playback.isCurrent(generation) || !manifest) return;
       clearLoad();
@@ -173,14 +187,34 @@ function renderCurrent() {
         playback.cancel();
         showOnly(empty);
         connection.hidden = false;
-        retryTimer = window.setTimeout(() => {
-          failedInPass = 0;
-          renderCurrent();
-        }, 60_000);
+        const retryGeneration = playback.invalidate();
+        retryTimer = guardedDeferred(
+          {
+            setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+            clearTimeout: (id) => window.clearTimeout(id),
+          },
+          retryGeneration,
+          (value) => playback.isCurrent(value),
+          () => {
+            failedInPass = 0;
+            renderCurrent();
+          },
+          60_000,
+        );
         return;
       }
       current = (current + 1) % manifest.slides.length;
-      window.setTimeout(renderCurrent, 0);
+      const skipGeneration = playback.invalidate();
+      skipTimer = guardedDeferred(
+        {
+          setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+          clearTimeout: (id) => window.clearTimeout(id),
+        },
+        skipGeneration,
+        (value) => playback.isCurrent(value),
+        renderCurrent,
+        0,
+      );
     };
     nextImage.onerror = failed;
     loadTimer = window.setTimeout(failed, 10_000);
@@ -238,9 +272,7 @@ async function refresh(): Promise<boolean> {
     if (response.status === 401) {
       // Drop any pending advance, or the previous slideshow would paint itself
       // back over the pairing screen a few seconds later.
-      clearLoad();
-      window.clearTimeout(retryTimer);
-      playback.cancel();
+      cancelRendering();
       showOnly(pairing);
       return false;
     }
@@ -254,11 +286,9 @@ async function refresh(): Promise<boolean> {
     if (!response.ok) throw new Error("manifest unavailable");
     const next = (await response.json()) as Manifest;
     connection.hidden = true;
-    const changed = !manifest || next.revision !== manifest.revision;
+    const changed = revisionChanged(manifest?.revision ?? null, next.revision);
     if (changed) {
-      clearLoad();
-      window.clearTimeout(retryTimer);
-      playback.cancel();
+      cancelRendering();
       manifest = next;
       current = 0;
       saveManifest(next);

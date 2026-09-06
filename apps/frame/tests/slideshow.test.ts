@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createSlideshowController } from "../src/slideshow.ts";
+import {
+  commitSlideDwell,
+  createSlideshowController,
+  guardedCallback,
+  guardedDeferred,
+  revisionChanged,
+} from "../src/slideshow.ts";
 
 function harness() {
   let now = 0;
@@ -92,5 +98,68 @@ test("cancel and revision generations invalidate stale work", () => {
   app.controller.cancel();
   assert.equal(app.controller.isCurrent(first), false);
   app.tick(2_000);
+  assert.equal(app.advances(), 0);
+});
+
+test("photo content and position commit only after the current load", () => {
+  const app = harness();
+  const generation = app.controller.invalidate();
+  let caption = "previous";
+  let counter = "1 / 2";
+  const loaded = guardedCallback(generation, app.controller.isCurrent, () => {
+    caption = "new caption";
+    counter = "2 / 2";
+  });
+  assert.equal(caption, "previous");
+  assert.equal(counter, "1 / 2");
+  loaded();
+  assert.equal(caption, "new caption");
+  assert.equal(counter, "2 / 2");
+});
+
+test("late photo load and queued failed-photo skip are ignored after cancel", () => {
+  const app = harness();
+  const generation = app.controller.invalidate();
+  let paints = 0;
+  let queued = () => {};
+  const loaded = guardedCallback(
+    generation,
+    app.controller.isCurrent,
+    () => paints++,
+  );
+  guardedDeferred(
+    {
+      setTimeout: (callback) => {
+        queued = callback;
+        return 99;
+      },
+      clearTimeout() {},
+    },
+    generation,
+    app.controller.isCurrent,
+    () => paints++,
+    0,
+  );
+  app.controller.cancel();
+  loaded();
+  queued();
+  assert.equal(paints, 0);
+});
+
+test("unchanged revision preserves the active deadline", () => {
+  const app = harness();
+  app.controller.commit(12_000);
+  app.tick(6_000);
+  assert.equal(revisionChanged(7, 7), false);
+  assert.equal(app.controller.getState().remaining, 6_000);
+  app.tick(6_000);
+  assert.equal(app.advances(), 1);
+});
+
+test("single slide cancels dwell so progress stays static and does not loop", () => {
+  const app = harness();
+  commitSlideDwell(app.controller, 1, 12_000);
+  assert.equal(app.timerCount(), 0);
+  app.tick(20_000);
   assert.equal(app.advances(), 0);
 });

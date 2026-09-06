@@ -134,3 +134,44 @@ test("does not cache unsuccessful font responses", async () => {
   assert.equal((await response).status, 404);
   assert.equal(app.stores.get("nagori-fonts-inter-4.5.15")?.size, 0);
 });
+
+test("media caching remains network-first and bounded to 30 entries", async () => {
+  const app = await harness(async () => new Response("photo"));
+  for (let index = 0; index < 31; index += 1) {
+    const request = new Request(`https://frame.test/api/media/${index}`);
+    let response = Promise.resolve(new Response("unset"));
+    app.listeners.get("fetch")?.({
+      request,
+      respondWith(value: Promise<Response>) {
+        response = value;
+      },
+    });
+    assert.equal((await response).status, 200);
+  }
+  const media = app.stores.get("nagori-media-v1");
+  assert.equal(media?.size, 30);
+  assert.equal(media?.has("https://frame.test/api/media/0"), false);
+  assert.equal(media?.has("https://frame.test/api/media/30"), true);
+});
+
+test("automatic-update capability marker and cache survive activation", async () => {
+  const app = await harness(async () => new Response("unused"));
+  let message: Promise<unknown> = Promise.resolve();
+  app.listeners.get("message")?.({
+    data: { type: "NAGORI_AUTOMATIC_UPDATES" },
+    waitUntil(value: Promise<unknown>) {
+      message = value;
+    },
+  });
+  await message;
+  let activation: Promise<unknown> = Promise.resolve();
+  app.listeners.get("activate")?.({
+    waitUntil(value: Promise<unknown>) {
+      activation = value;
+    },
+  });
+  await activation;
+  const capabilities = app.stores.get("nagori-capabilities-v1");
+  assert.equal(app.stores.has("nagori-capabilities-v1"), true);
+  assert.equal(capabilities?.has("/__nagori/automatic-updates"), true);
+});

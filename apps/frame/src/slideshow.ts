@@ -92,3 +92,38 @@ export function createSlideshowController(
     getState: state,
   };
 }
+
+export function revisionChanged(current: number | null, next: number) {
+  return current === null || current !== next;
+}
+
+export function commitSlideDwell(
+  controller: ReturnType<typeof createSlideshowController>,
+  slideCount: number,
+  milliseconds: number,
+) {
+  if (slideCount > 1) controller.commit(milliseconds);
+  else controller.cancel();
+}
+
+export function guardedDeferred(
+  clock: Pick<SlideshowClock, "setTimeout" | "clearTimeout">,
+  generation: number,
+  isCurrent: (generation: number) => boolean,
+  callback: () => void,
+  delay: number,
+) {
+  return clock.setTimeout(() => {
+    if (isCurrent(generation)) callback();
+  }, delay);
+}
+
+export function guardedCallback(
+  generation: number,
+  isCurrent: (generation: number) => boolean,
+  callback: () => void,
+) {
+  return () => {
+    if (isCurrent(generation)) callback();
+  };
+}
