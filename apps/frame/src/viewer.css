@@ -59,12 +59,11 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 80px;
-  /* biome-ignore lint/suspicious/noDuplicateProperties: Safari 12 fallback before env(). */
-  bottom: calc(80px + env(safe-area-inset-bottom));
+  bottom: 0;
   margin: 0;
-  padding: 4.5rem 5vw 2.5rem;
-  max-height: calc(55% - 80px);
+  padding: 4.5rem 5vw calc(2.5rem + 80px);
+  padding-bottom: calc(2.5rem + 80px + env(safe-area-inset-bottom));
+  max-height: 55%;
   overflow: auto;
   overflow-wrap: break-word;
   font-family: var(--nagori-font-serif);
