@@ -263,6 +263,62 @@ export class NagoriStore {
     return result.results ?? [];
   }
 
+  async deleteMemberAccount(input: {
+    householdId: string;
+    actorUserId: string;
+    memberId: string;
+  }): Promise<boolean> {
+    // Repeat authorization inside the transaction, including on the final
+    // delete. An owner cannot delete themselves, another owner, or an account
+    // belonging to another household.
+    const eligible = `SELECT target.user_id FROM memberships target
+      WHERE target.household_id = ? AND target.user_id = ?
+        AND target.role IN ('editor', 'viewer') AND target.user_id <> ?
+        AND EXISTS (SELECT 1 FROM memberships actor
+          WHERE actor.household_id = target.household_id
+            AND actor.user_id = ? AND actor.role = 'owner')
+        AND NOT EXISTS (SELECT 1 FROM memberships other
+          WHERE other.user_id = target.user_id
+            AND other.household_id <> target.household_id)`;
+    const bindings = [
+      input.householdId,
+      input.memberId,
+      input.actorUserId,
+      input.actorUserId,
+    ];
+    const statements = [
+      // Keep shared memories and their stored media, transferring attribution.
+      ...[
+        ["slides", "created_by"],
+        ["media_assets", "uploader_user_id"],
+        ["invitations", "created_by"],
+      ].map(([table, column]) =>
+        this.db
+          .prepare(
+            `UPDATE ${table} SET ${column} = ? WHERE ${column} IN (${eligible})`,
+          )
+          .bind(input.actorUserId, ...bindings),
+      ),
+      this.db
+        .prepare(
+          `UPDATE audit_events SET actor_user_id = NULL WHERE actor_user_id IN (${eligible})`,
+        )
+        .bind(...bindings),
+      // Also withdraw unused invites so an old link cannot restore access.
+      this.db
+        .prepare(
+          `DELETE FROM invitations WHERE household_id = ? AND email IN (SELECT email FROM users WHERE id IN (${eligible}))`,
+        )
+        .bind(input.householdId, ...bindings),
+      // Foreign keys cascade deletion to memberships and every login session.
+      this.db
+        .prepare(`DELETE FROM users WHERE id IN (${eligible})`)
+        .bind(...bindings),
+    ];
+    const results = await this.db.batch(statements);
+    return Number(results[results.length - 1].meta?.changes ?? 0) > 0;
+  }
+
   async createInvitation(input: {
     householdId: string;
     userId: string;

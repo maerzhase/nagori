@@ -131,7 +131,7 @@ export default {
       await store.touchDevice(device.id);
       const manifest = await store.getManifest(
         device.householdId,
-        `${url.origin}/api/media`,
+        "/api/media",
       );
       const etag = `W/"${manifest.revision}"`;
       if (request.headers.get("if-none-match") === etag) {

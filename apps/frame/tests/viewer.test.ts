@@ -32,7 +32,7 @@ const manifest = {
   ],
 };
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-function harness() {
+function harness(savedManifest = manifest) {
   const elements = new Map<
     string,
     {
@@ -87,7 +87,10 @@ function harness() {
     },
     navigator: {},
     performance: { now: () => now },
-    localStorage: { getItem: () => JSON.stringify(manifest), setItem() {} },
+    localStorage: {
+      getItem: () => JSON.stringify(savedManifest),
+      setItem() {},
+    },
     fetch: (url: string) =>
       url.startsWith("/api/manifest")
         ? new Promise((resolve) => responses.push(resolve))
@@ -125,6 +128,22 @@ function harness() {
     },
   };
 }
+
+test("saved absolute media URLs recover even when the manifest is unchanged", async () => {
+  const h = harness({
+    ...manifest,
+    slides: [
+      {
+        ...manifest.slides[0],
+        mediaUrl: "http://nagori-frame.m3000.io/api/media/1",
+      },
+    ],
+  });
+  assert.equal(h.element("photo-b").src, "/api/media/1");
+  h.responses[0]({ status: 304 });
+  await settle();
+  assert.equal(h.element("photo-b").src, "/api/media/1");
+});
 
 test("viewer changes photo and caption together, preserves dwell on unchanged refresh, then shows a message", async () => {
   const h = harness();

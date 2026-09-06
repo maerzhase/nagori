@@ -4,19 +4,23 @@ import {
   scheduleStatus,
 } from "@nagori/core";
 import { Button, Field, Input, SlidePreview } from "@nagori/ui";
-import { currentUser } from "@/lib/auth";
-import { getEnv, getStore } from "@/lib/cloudflare";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { isTabKey, type TabKey } from "@/lib/tabs";
-import { InviteForm, PendingInvites } from "@/components/family-forms";
+import {
+  DeleteMemberAccount,
+  InviteForm,
+  PendingInvites,
+} from "@/components/family-forms";
 import { CreateFrameForm, DeviceRows } from "@/components/frame-forms";
 import { MemoryForm } from "@/components/memory-form";
-import { SortableLibrary } from "@/components/sortable-library";
 import { SettingsForm } from "@/components/settings-form";
+import { SortableLibrary } from "@/components/sortable-library";
+import { currentUser } from "@/lib/auth";
+import { getEnv, getStore } from "@/lib/cloudflare";
+import { isTabKey, type TabKey } from "@/lib/tabs";
 import {
   archiveSlideAction,
-  logoutAction,
   loginAction,
+  logoutAction,
   renewSlideAction,
   rescheduleSlideAction,
   setupAction,
@@ -411,7 +415,19 @@ export default async function Home({
                         <strong>{member.name}</strong>
                         <small>{member.email}</small>
                       </p>
-                      <em>{member.role}</em>
+                      <div className="member-actions">
+                        <em>{member.role}</em>
+                        {user.role === "owner" && (
+                          <span className="member-action-slot">
+                            {member.role !== "owner" && (
+                              <DeleteMemberAccount
+                                memberId={member.id}
+                                name={member.name}
+                              />
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

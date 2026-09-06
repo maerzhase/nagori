@@ -727,7 +727,7 @@ textarea {
 }
 .member-list > div {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.8rem;
   border-bottom: 1px solid var(--line);
@@ -738,6 +738,37 @@ textarea {
 .member-list small {
   display: block;
   margin: 0;
+}
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.member-action-slot {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+}
+.member-list > div > p {
+  min-width: 0;
+}
+.member-list small {
+  overflow-wrap: anywhere;
+}
+.member-delete {
+  position: relative;
+}
+.member-delete [role="alert"] {
+  position: absolute;
+  right: 0;
+  width: 16rem;
+  z-index: 1;
+  padding: 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
 }
 .member-list strong {
   font-size: 0.8rem;

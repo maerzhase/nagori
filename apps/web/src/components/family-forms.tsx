@@ -13,9 +13,58 @@ import { useActionState } from "react";
 import type { InviteResult } from "@/app/action-results";
 import {
   createInvitationAction,
+  deleteMemberAccountAction,
   revokeInvitationAction,
   rotateInvitationAction,
 } from "@/app/actions";
+
+export function DeleteMemberAccount({
+  memberId,
+  name,
+}: {
+  memberId: string;
+  name: string;
+}) {
+  const [result, action, pending] = useActionState(
+    deleteMemberAccountAction,
+    null,
+  );
+  return (
+    <form action={action} className="member-delete">
+      <input type="hidden" name="memberId" value={memberId} />
+      <ConfirmButton
+        label={`Delete ${name}’s account`}
+        heading={`Delete ${name}’s account?`}
+        description="They’ll lose access. Their shared photos and messages will stay."
+        confirmLabel="Delete account"
+        cancelLabel="Keep account"
+        size="icon"
+        variant="subtle"
+        disabled={pending}
+        aria-busy={pending}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+        </svg>
+      </ConfirmButton>
+      {result?.error && (
+        <p role="alert">
+          {result.error === "permission"
+            ? "Only the owner can delete accounts."
+            : "This account could not be deleted. It may have already been removed or belong to another household."}
+        </p>
+      )}
+    </form>
+  );
+}
 
 function InviteSecret({ result }: { result: InviteResult }) {
   if (result.error)

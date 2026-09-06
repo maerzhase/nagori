@@ -236,7 +236,20 @@ function saveManifest(value: Manifest) {
 
 function loadSavedManifest(): Manifest | null {
   try {
-    return JSON.parse(localStorage.getItem("nagori-manifest") || "null");
+    const saved: Manifest | null = JSON.parse(
+      localStorage.getItem("nagori-manifest") || "null",
+    );
+    // Older workers included their internal origin, which can differ from
+    // the browser's origin behind a local HTTPS proxy.
+    for (const item of saved?.slides ?? []) {
+      if (
+        item.mediaUrl &&
+        /^https?:\/\/[^/]+\/api\/media\//.test(item.mediaUrl)
+      ) {
+        item.mediaUrl = `/api/media/${encodeURIComponent(item.id)}`;
+      }
+    }
+    return saved;
   } catch (_error) {
     return null;
   }

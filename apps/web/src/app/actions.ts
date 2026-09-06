@@ -10,9 +10,9 @@ import {
   normalizeEmail,
   type PairingSecrets,
 } from "@nagori/core";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { requireUser, SESSION_COOKIE, setSessionCookie } from "@/lib/auth";
 import { getEnv, getStore } from "@/lib/cloudflare";
 import type { InviteResult, PairingResult } from "./action-results";
@@ -327,6 +327,22 @@ export async function rotateInvitationAction(
   if (!rotated) return { error: "not_found" };
   revalidatePath("/");
   return { email: rotated.email, link: inviteLink(rotated.token) };
+}
+
+export async function deleteMemberAccountAction(
+  _previous: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const user = await requireUser();
+  if (user.role !== "owner") return { error: "permission" };
+  const deleted = await getStore().deleteMemberAccount({
+    householdId: user.householdId,
+    actorUserId: user.id,
+    memberId: text(formData, "memberId"),
+  });
+  if (!deleted) return { error: "not_found" };
+  revalidatePath("/");
+  return {};
 }
 
 export async function revokeInvitationAction(formData: FormData) {
