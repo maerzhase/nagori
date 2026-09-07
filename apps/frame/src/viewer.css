@@ -3,6 +3,13 @@
 @source "../public/index.html";
 
 /*
+ * This file is built without --minify on purpose. Tailwind's minifier targets
+ * Safari 16.4 and rewrites top/right/bottom/left into `inset`, which iOS 12
+ * ignores: the sleep overlay then lands off-screen and the caption scrim has no
+ * size. tests/viewer-css.test.ts guards the built output.
+ */
+
+/*
  * Tailwind's own [hidden] reset lives in @layer base behind a :where()
  * selector; iOS 12 understands neither, so without this plain rule every
  * section's display:flex wins over the hidden attribute and the pairing
