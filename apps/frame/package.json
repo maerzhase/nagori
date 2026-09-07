@@ -15,7 +15,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "node build.mjs && tailwindcss -i src/viewer.css -o dist/viewer.css --minify",
+    "build": "node build.mjs && tailwindcss -i src/viewer.css -o dist/viewer.css",
     "deploy": "pnpm build && wrangler deploy",
     "dev": "pnpm build && wrangler dev --port 8788 --persist-to ../../.wrangler/state",
     "format": "biome format .",
